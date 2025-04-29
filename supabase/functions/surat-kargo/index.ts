@@ -2,7 +2,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const SURAT_KARGO_API_URL = 'https://api02.suratkargo.com.tr'
 const SURAT_KARGO_USERNAME = '1472651760'
-const SURAT_KARGO_PASSWORD = 'Karvego.123!'
+const SURAT_KARGO_PASSWORD = 'Kargo.2025'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

@@ -97,7 +97,7 @@ export async function sendToSuratKargoV2(gonderi: SuratKargoGonderi): Promise<Su
     // API için istek payload'ını oluştur
     const requestPayload: SuratKargoRequest = {
       KullaniciAdi: "1472651760",
-      Sifre: "Karvego.123!",
+      Sifre: "Kargo.2025",
       Gonderi: sanitizedGonderi
     };
 
