@@ -132,7 +132,7 @@ const BarkodModal: React.FC<BarkodModalProps> = ({
       alert('Barkod PNG olarak indirilemedi. Lütfen tekrar deneyin.');
     });
   };
-  console.log(barkodTasarim.config.barcodeWidth);
+
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-50 overflow-y-auto flex justify-center items-center">
       <div className="bg-white rounded-lg p-6 max-w-3xl w-full mx-auto">
@@ -170,19 +170,27 @@ const BarkodModal: React.FC<BarkodModalProps> = ({
             padding: '15px'
           }}>
             {/* Logo ve barkod alanı */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: '15px',
+              flexWrap: 'wrap'
+            }}>
               {/* Logo alanı */}
               {barkodTasarim.config.showLogo && barkodTasarim.config.logoPosition !== 'none' && (
                 <div style={{ 
-                  width: '50%', 
-                  textAlign: barkodTasarim.config.logoPosition as 'left' | 'center' | 'right' 
+                  width: barkodTasarim.config.logoPosition === 'center' ? '100%' : '45%', 
+                  textAlign: barkodTasarim.config.logoPosition as 'left' | 'center' | 'right',
+                  marginBottom: barkodTasarim.config.logoPosition === 'center' ? '15px' : '0',
+                  order: barkodTasarim.config.logoPosition === 'right' ? 2 : 1
                 }}>
                   {barkodTasarim.config.logoUrl ? (
                     <img 
                       src={barkodTasarim.config.logoUrl} 
                       alt="Logo"
                       crossOrigin="anonymous"
-                      style={{ maxHeight: '100px', maxWidth: '150px' }}
+                      style={{ maxHeight: '100px', maxWidth: '150px', display: 'inline-block' }}
                     />
                   ) : (
                     <div style={{ fontWeight: 'bold' }}>{selectedSenderAddress?.name || 'KarVeGo'}</div>
@@ -191,13 +199,17 @@ const BarkodModal: React.FC<BarkodModalProps> = ({
               )}
               
               {/* Barkod alanı */}
-              <div style={{ width: '50%', textAlign: 'right' }}>
+              <div style={{ 
+                width: !barkodTasarim.config.showLogo || barkodTasarim.config.logoPosition === 'none' ? '100%' : '55%', 
+                textAlign: 'right',
+                order: barkodTasarim.config.logoPosition === 'right' ? 1 : 2
+              }}>
                 <svg id="barcode" ref={(ref) => {
                   if (ref) {
                     if (window.JsBarcode) {
                       window.JsBarcode(ref, labelData.tracking_number, {
                         format: "CODE128",
-                        width: 3,
+                        width: 1.5,
                         height: barkodTasarim.config.barcodeHeight,
                         displayValue: barkodTasarim.config.showBarcodeText,
                         background: barkodTasarim.config.backgroundColor,
@@ -217,7 +229,8 @@ const BarkodModal: React.FC<BarkodModalProps> = ({
                   }
                 }} style={{ 
                   width: `${barkodTasarim.config.barcodeWidth}px`, 
-                  height: `${barkodTasarim.config.barcodeHeight}px` 
+                  height: `${barkodTasarim.config.barcodeHeight}px`,
+                  maxWidth: '100%'
                 }}></svg>
               </div>
             </div>
@@ -403,6 +416,7 @@ const BarkodModal: React.FC<BarkodModalProps> = ({
                         justify-content: space-between; 
                         align-items: center; 
                         margin-bottom: 15px; 
+                        flex-wrap: wrap;
                       }
                       .section {
                         border-bottom: 1px solid ${barkodTasarim.config.borderColor};
@@ -439,12 +453,24 @@ const BarkodModal: React.FC<BarkodModalProps> = ({
                   <body>
                     <div class="container">
                       <div class="header">
-                        ${barkodTasarim.config.showLogo && barkodTasarim.config.logoUrl ? 
-                          `<div><img src="${barkodTasarim.config.logoUrl}" alt="Logo" style="max-height: 50px;"></div>` : 
-                          `<div><strong>${selectedSenderAddress?.name || 'KarVeGo'}</strong></div>`}
-                        <div>
+                        ${barkodTasarim.config.showLogo && barkodTasarim.config.logoPosition !== 'none' ? 
+                          `<div style="
+                            ${barkodTasarim.config.logoPosition === 'center' ? 'width: 100%; text-align: center; margin-bottom: 15px;' : 'width: 45%;'} 
+                            text-align: ${barkodTasarim.config.logoPosition}; 
+                            order: ${barkodTasarim.config.logoPosition === 'right' ? '2' : '1'};
+                          ">
+                            ${barkodTasarim.config.logoUrl ? 
+                              `<img src="${barkodTasarim.config.logoUrl}" alt="Logo" style="max-height: 50px; display: inline-block;">` : 
+                              `<strong>${selectedSenderAddress?.name || 'KarVeGo'}</strong>`}
+                          </div>` : ''}
+                        
+                        <div style="
+                          ${!barkodTasarim.config.showLogo || barkodTasarim.config.logoPosition === 'none' ? 'width: 100%;' : 'width: 55%;'} 
+                          text-align: right;
+                          order: ${barkodTasarim.config.logoPosition === 'right' ? '1' : '2'};
+                        ">
                           <div style="text-align: center; margin-bottom: 10px;">
-                            <svg id="barcode"></svg>
+                            <svg id="barcode" style="width: ${barkodTasarim.config.barcodeWidth}px; height: ${barkodTasarim.config.barcodeHeight}px; max-width: 100%;"></svg>
                           </div>
                           ${barkodTasarim.config.showBarcodeText ? 
                             `<div style="text-align: center;">${labelData.tracking_number}</div>` : ''}
@@ -542,7 +568,7 @@ const BarkodModal: React.FC<BarkodModalProps> = ({
                     <script>
                       JsBarcode("#barcode", "${labelData.tracking_number}", {
                         format: "CODE128",
-                        width: 2,
+                        width: 1.5,
                         height: ${barkodTasarim.config.barcodeHeight},
                         displayValue: ${barkodTasarim.config.showBarcodeText},
                         background: "${barkodTasarim.config.backgroundColor}",
