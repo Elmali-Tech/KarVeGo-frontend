@@ -1,0 +1,42 @@
+{
+  "KullaniciAdi": "1472651760",
+  "Sifre": "Karvego.123!",
+  "FirmaId": 1,
+  "Data": [
+    {
+      "Desi": 1,
+      "Kg": 1,
+      "Adet": 1,
+      "Fiyat": "0",
+      "KimOder": 1,
+      "SatisKodu": "TEST-1744888852",
+      "Gonderen": {
+        "MusteriId": "1",
+        "Adi": "Test",
+        "Soyadi": "Gönderici",
+        "Telefon": "5551112233",
+        "Email": "test@example.com",
+        "Adres": "Test Mahallesi Test Sokak No:1",
+        "IlId": 34,
+        "IlceAdi": "Kadıköy"
+      },
+      "Alici": {
+        "MusteriId": "2",
+        "Adi": "Test",
+        "Soyadi": "Alıcı",
+        "Telefon": "5554445566",
+        "Email": "alici@example.com",
+        "Adres": "Test Mahallesi Test Caddesi No:2",
+        "IlId": 6,
+        "IlceAdi": "Çankaya"
+      },
+      "GonderiDurumu": 1,
+      "Icerik": "Test Ürünü",
+      "GonderiSekli": 0,
+      "IsKapidanTahsilat": false,
+      "KapidaTahsilatTutari": 0,
+      "TeslimKodu": "",
+      "TeslimNoktaKodu": ""
+    }
+  ]
+}
