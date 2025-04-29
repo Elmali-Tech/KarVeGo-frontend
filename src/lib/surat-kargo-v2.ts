@@ -51,7 +51,7 @@ interface SuratKargoResponse {
 // Geliştirme ortamında localhost, üretimde gerçek URL kullanılacak
 const API_BASE_URL = import.meta.env.DEV 
   ? 'http://localhost:3000/api' 
-  : 'https://your-production-api.com/api';
+  : 'https://karvego-backend-900677923244.europe-west1.run.app/api';
 
 /**
  * Sürat Kargo GonderiyiKargoyaGonder API'sini çağıran fonksiyon
