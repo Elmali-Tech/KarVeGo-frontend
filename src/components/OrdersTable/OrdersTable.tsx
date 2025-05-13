@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { toast } from 'sonner';
-import { Trash2, X } from 'lucide-react';
+import { Trash2, X, Filter } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Order, SenderAddress, ProductFilter } from './types';
-import { calculateDesi, getStatusText } from './utils';
+import { calculateDesi } from './utils';
 import { filterOrders } from './FilterUtils';
 import { calculateShippingPrice, fetchLabelData, sendToNewSuratCargoApi } from './ShippingLabelService';
 import Filters from './Filters';
@@ -72,6 +72,7 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
   const [showBarkodModal, setShowBarkodModal] = useState(false); 
   const [labelData, setLabelData] = useState<LabelData | null>(null);
   const [barkodTasarim, setBarkodTasarim] = useState<BarkodTasarim>(defaultTasarim);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   
   // Yeni multi-select filtre değişkenleri
   const [showProductFilters, setShowProductFilters] = useState(false);
@@ -83,6 +84,14 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
   const [currentProduct, setCurrentProduct] = useState('');
   const [currentQuantity, setCurrentQuantity] = useState<number | ''>('');
   const [showMultiFilter, setShowMultiFilter] = useState(false);
+
+  // Add this useEffect to sync showMultiFilter with URL params if needed
+  useEffect(() => {
+    // Show multi filter if there are product filters
+    if (productFilters.length > 0 && !showMultiFilter) {
+      setShowMultiFilter(true);
+    }
+  }, [productFilters, showMultiFilter]);
 
   // Barkod tasarımlarını yükle
   useEffect(() => {
@@ -589,38 +598,54 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
   
   // Toplu sipariş durum güncellemesi
   const handleBulkUpdateStatus = async (newStatus: Order['status']) => {
-    if (selectedOrders.length === 0) {
-      toast.error('Lütfen en az bir sipariş seçin');
-      return;
-    }
-    
+    if (selectedOrders.length === 0) return;
+
     try {
       const result = await Swal.fire({
-        title: 'Toplu Durum Güncelleme',
-        text: `${selectedOrders.length} siparişin durumunu güncellemek istediğinize emin misiniz?`,
-        icon: 'question',
+        title: `Durum Güncelleme`,
+        text: `${selectedOrders.length} siparişi "${getStatusText(newStatus)}" durumuna güncellemek istediğinize emin misiniz?`,
+        icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
+        confirmButtonColor: '#10B981',
+        cancelButtonColor: '#6b7280',
         confirmButtonText: 'Evet, Güncelle',
-        cancelButtonText: 'İptal'
+        cancelButtonText: 'İptal',
       });
-      
+
       if (result.isConfirmed) {
         const { error } = await supabase
           .from('orders')
           .update({ status: newStatus })
           .in('id', selectedOrders);
-          
+
         if (error) throw error;
-        
-        toast.success(`${selectedOrders.length} sipariş başarıyla güncellendi`);
-        setSelectedOrders([]);
+
+        await Swal.fire({
+          title: 'Başarılı!',
+          text: `${selectedOrders.length} sipariş durumu güncellendi`,
+          icon: 'success',
+          confirmButtonColor: '#10B981',
+        });
+
         onOrderUpdate();
       }
     } catch (err) {
-      console.error('Toplu durum güncelleme hatası:', err);
-      toast.error('Toplu durum güncellenirken bir hata oluştu');
+      console.error('Siparişler güncellenirken hata oluştu:', err);
+      toast.error('Sipariş durumları güncellenirken bir hata oluştu');
+    }
+  };
+
+  // Helper function to get status text
+  const getStatusText = (status: Order['status'] | 'ALL'): string => {
+    switch (status) {
+      case 'NEW': return 'Yeni';
+      case 'READY': return 'Hazırlandı';
+      case 'PRINTED': return 'Yazdırıldı';
+      case 'SHIPPED': return 'Kargoda';
+      case 'PROBLEMATIC': return 'Sorunlu';
+      case 'COMPLETED': return 'Tamamlandı';
+      case 'ALL': return 'Tümü';
+      default: return status;
     }
   };
 
@@ -707,116 +732,202 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* Filtreler */}
-      <Filters 
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filterStatus={filterStatus}
-        setFilterStatus={setFilterStatus}
-        selectedOrders={selectedOrders}
-        handleBulkCreateLabels={handleBulkCreateLabels}
-        handleBulkUpdateStatus={handleBulkUpdateStatus}
-        handleDeleteSelected={handleDeleteSelected}
-        onOrderUpdate={onOrderUpdate}
-        showProductFilters={showProductFilters}
-        setShowProductFilters={setShowProductFilters}
-        selectedProductFilters={selectedProductFilters}
-        setSelectedProductFilters={setSelectedProductFilters}
-        productQuantityFilters={productQuantityFilters}
-        setProductQuantityFilters={setProductQuantityFilters}
-        allProducts={allProducts}
-        allQuantities={allQuantities}
-        activeFilterCount={activeFilterCount}
-        showMultiFilter={showMultiFilter}
-        setShowMultiFilter={setShowMultiFilter}
-        productFilters={productFilters}
-        currentProduct={currentProduct}
-        setCurrentProduct={setCurrentProduct}
-        currentQuantity={currentQuantity}
-        setCurrentQuantity={setCurrentQuantity}
-        handleAddProductFilter={handleAddProductFilter}
-        handleRemoveProductFilter={handleRemoveProductFilter}
-        handleClearProductFilters={handleClearProductFilters}
-        handleApplyFilters={handleApplyFilters}
-      />
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* Filter section with better mobile handling */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="md:flex items-center justify-between">
+          <div className="flex items-center">
+            <h2 className="text-lg font-semibold text-gray-800">Siparişler ({filteredOrders.length})</h2>
+            {selectedOrders.length > 0 && (
+              <div className="ml-4 flex items-center">
+                <span className="text-sm text-gray-600 mr-2">
+                  {selectedOrders.length} sipariş seçildi
+                </span>
+                <button
+                  onClick={() => setSelectedOrders([])}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
 
-      {/* Toplu İşlemler */}
-      {selectedOrders.length > 0 && (
-        <div className="bg-gray-50 px-6 py-4 border-b flex items-center justify-between">
-          <span className="text-sm text-gray-700">
-            {selectedOrders.length} sipariş seçildi
-          </span>
-          <button
-            onClick={handleDeleteSelected}
-            className="flex items-center gap-2 text-red-600 hover:text-red-700"
-          >
-            <Trash2 className="w-4 h-4" />
-            Seçilenleri Sil
-          </button>
+            {/* Mobile filter toggle button */}
+            <button 
+              className="md:hidden ml-auto flex items-center rounded-md bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filtreler
+              {activeFilterCount > 0 && (
+                <span className="ml-1 rounded-full bg-darkGreen text-white px-2 py-0.5 text-xs">{activeFilterCount}</span>
+              )}
+            </button>
+          </div>
+
+          <div className="hidden md:flex gap-2 mt-4 md:mt-0">
+            {selectedOrders.length > 0 && (
+              <>
+                <button
+                  onClick={() => handleBulkCreateLabels()}
+                  disabled={isLoading}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-darkGreen hover:bg-lightGreen focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lightGreen disabled:opacity-50"
+                >
+                  Toplu Etiket Oluştur
+                </button>
+                <button
+                  onClick={() => handleBulkUpdateStatus('NEW')}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Beklemede Yap
+                </button>
+                <button
+                  onClick={() => handleBulkUpdateStatus('SHIPPED')}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Kargoya Ver
+                </button>
+                <button
+                  onClick={handleDeleteSelected}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Sil
+                </button>
+              </>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Filtreleme bilgisi */}
-      <div className="px-6 py-2 text-sm text-gray-500">
-        {filteredOrders.length} sipariş gösteriliyor 
-        {filterStatus !== 'ALL' && ` (${getStatusText(filterStatus)} durumunda)`}
-        {searchTerm && ` "${searchTerm}" için arama sonuçları`}
-        {activeFilterCount > 0 && ` (Çoklu filtre: ${activeFilterCount} ürün)`}
-        {productFilters.length > 0 && ` (Ürün-Miktar filtresi: ${productFilters.map(f => `${f.product} x${f.quantity}`).join(', ')})`}
+        {/* Mobile actions panel when items selected */}
+        {selectedOrders.length > 0 && (
+          <div className="md:hidden flex gap-2 mt-4 overflow-x-auto pb-2">
+            <button
+              onClick={() => handleBulkCreateLabels()}
+              disabled={isLoading}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-darkGreen hover:bg-lightGreen focus:outline-none disabled:opacity-50 whitespace-nowrap"
+            >
+              Toplu Etiket
+            </button>
+            <button
+              onClick={() => handleBulkUpdateStatus('NEW')}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none whitespace-nowrap"
+            >
+              Beklemede
+            </button>
+            <button
+              onClick={() => handleBulkUpdateStatus('SHIPPED')}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none whitespace-nowrap"
+            >
+              Kargoya Ver
+            </button>
+            <button
+              onClick={handleDeleteSelected}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none whitespace-nowrap"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Sil
+            </button>
+          </div>
+        )}
+
+        {/* Conditional rendering for filters on mobile */}
+        <div className={`mt-4 ${showMobileFilters ? 'block' : 'hidden md:block'}`}>
+          <Filters
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            allProducts={allProducts}
+            allQuantities={allQuantities}
+            showProductFilters={showProductFilters}
+            setShowProductFilters={setShowProductFilters}
+            selectedProductFilters={selectedProductFilters}
+            setSelectedProductFilters={setSelectedProductFilters}
+            productQuantityFilters={productQuantityFilters}
+            setProductQuantityFilters={setProductQuantityFilters}
+            productFilters={productFilters}
+            currentProduct={currentProduct}
+            setCurrentProduct={setCurrentProduct}
+            currentQuantity={currentQuantity}
+            setCurrentQuantity={setCurrentQuantity}
+            handleAddProductFilter={handleAddProductFilter}
+            handleRemoveProductFilter={handleRemoveProductFilter}
+            handleClearProductFilters={handleClearProductFilters}
+            handleApplyFilters={handleApplyFilters}
+          />
+        </div>
       </div>
 
-      {/* Tablo Görünümü */}
-      <TableView 
-        filteredOrders={filteredOrders}
-        selectedOrders={selectedOrders}
-        handleSelectOrder={handleSelectOrder}
-        handleSelectAll={handleSelectAll}
-        getWeightInfo={getWeightInfo}
-        handleShowDetail={handleShowDetail}
-        handleEditOrder={handleEditOrder}
-        handleBuyLabel={handleBuyLabel}
-        showOrderJson={showOrderJson}
-        handleDeleteOrder={handleDeleteOrder}
-      />
+      {/* Loading and table content */}
+      <div className="relative">
+        {loading && (
+          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-darkGreen"></div>
+          </div>
+        )}
 
-      {/* Modaller */}
-      <OrderJsonModal 
-        showJsonModal={showJsonModal}
-        selectedOrderJson={selectedOrderJson}
-        closeJsonModal={closeJsonModal}
-      />
-      
-      <OrderEdit 
-        showEditModal={showEditModal}
-        editingOrder={editingOrder}
-        closeEditModal={closeEditModal}
-        handleSaveOrder={handleSaveOrder}
-        setEditingOrder={setEditingOrder}
-      />
-      
-      <OrderDetail 
-        detailOrder={detailOrder}
-        showDetailModal={showDetailModal}
-        setShowDetailModal={setShowDetailModal}
-      />
-      
-      <LabelModal 
-        isLabelModalOpen={isLabelModalOpen}
-        selectedOrder={selectedOrder}
-        senderAddresses={senderAddresses}
-        selectedSenderAddress={selectedSenderAddress}
-        labelPrice={labelPrice}
-        isLoading={isLoading}
-        handleSenderAddressChange={handleSenderAddressChange}
-        handleCreateLabel={handleCreateLabel}
-        setIsLabelModalOpen={setIsLabelModalOpen}
-      />
+        {/* Table Component */}
+        <div className="overflow-hidden">
+          <TableView
+            filteredOrders={filteredOrders}
+            selectedOrders={selectedOrders}
+            handleSelectOrder={handleSelectOrder}
+            handleSelectAll={handleSelectAll}
+            getWeightInfo={getWeightInfo}
+            handleShowDetail={handleShowDetail}
+            handleEditOrder={handleEditOrder}
+            handleBuyLabel={handleBuyLabel}
+            showOrderJson={showOrderJson}
+            handleDeleteOrder={handleDeleteOrder}
+          />
+        </div>
+      </div>
 
-      {/* Barkod Modal */}
-      {showBarkodModal && selectedOrder && labelData && (
-        <BarkodModal 
+      {/* Modals */}
+      {showJsonModal && selectedOrderJson && (
+        <OrderJsonModal
+          showJsonModal={showJsonModal}
+          selectedOrderJson={selectedOrderJson}
+          closeJsonModal={closeJsonModal}
+        />
+      )}
+
+      {showEditModal && editingOrder && (
+        <OrderEdit
+          showEditModal={showEditModal}
+          editingOrder={editingOrder}
+          closeEditModal={closeEditModal}
+          handleSaveOrder={handleSaveOrder}
+          setEditingOrder={setEditingOrder}
+        />
+      )}
+
+      {showDetailModal && detailOrder && (
+        <OrderDetail
+          detailOrder={detailOrder}
+          showDetailModal={showDetailModal}
+          setShowDetailModal={setShowDetailModal}
+        />
+      )}
+
+      {isLabelModalOpen && selectedOrder && (
+        <LabelModal
+          isLabelModalOpen={isLabelModalOpen}
           selectedOrder={selectedOrder}
+          senderAddresses={senderAddresses}
+          selectedSenderAddress={selectedSenderAddress}
+          labelPrice={labelPrice}
+          isLoading={isLoading}
+          handleSenderAddressChange={handleSenderAddressChange}
+          handleCreateLabel={handleCreateLabel}
+          setIsLabelModalOpen={setIsLabelModalOpen}
+        />
+      )}
+
+      {showBarkodModal && labelData && (
+        <BarkodModal
+          selectedOrder={selectedOrder!}
           labelData={labelData}
           barkodTasarim={barkodTasarim}
           showBarkodModal={showBarkodModal}

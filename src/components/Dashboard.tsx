@@ -67,7 +67,8 @@ export default function Dashboard() {
 
       if (error) throw error;
       setProducts(data || []);
-    } catch (err) {
+    } catch (error) {
+      console.error('Ürünler yüklenirken bir hata oluştu:', error);
       toast.error('Ürünler yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -104,7 +105,8 @@ export default function Dashboard() {
 
         fetchProducts();
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Ürün silinirken bir hata oluştu:', error);
       Swal.fire({
         title: 'Hata!',
         text: 'Ürün silinirken bir hata oluştu',
@@ -179,52 +181,54 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-black">Ürün Yönetimi</h1>
         </div>
 
-        <div className="flex items-center justify-between bg-white rounded-lg shadow-md p-6 border border-gray-100">
-          <div className="flex items-center gap-4">
-            <Store className="w-6 h-6 text-lightGreen" />
-            <div>
-              <h2 className="text-lg font-medium text-black">Shopify Entegrasyonu</h2>
-              {shopifyStore ? (
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="text-sm text-gray-600">{shopifyStore.shop_url}</span>
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    shopifyStore.is_active 
-                      ? 'bg-lightGreen bg-opacity-20 text-darkGreen' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {shopifyStore.is_active ? 'Aktif' : 'Pasif'}
-                  </span>
-                </div>
-              ) : (
-                <p className="mt-1 text-sm text-gray-600">
-                  Henüz Shopify mağazası bağlanmamış
-                </p>
-              )}
+        <div className="bg-white rounded-lg shadow-md p-4 md:p-6 border border-gray-100">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Store className="w-6 h-6 text-darkGreen flex-shrink-0" />
+              <div>
+                <h2 className="text-lg font-medium text-black">Shopify Entegrasyonu</h2>
+                {shopifyStore ? (
+                  <div className="mt-1 flex items-center gap-2 flex-wrap">
+                    <span className="text-sm text-gray-600">{shopifyStore.shop_url}</span>
+                    <span className={`px-2 py-0.5 text-xs rounded-full ${
+                      shopifyStore.is_active 
+                        ? 'bg-lightGreen bg-opacity-20 text-darkGreen' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {shopifyStore.is_active ? 'Aktif' : 'Pasif'}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-600">
+                    Henüz Shopify mağazası bağlanmamış
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <a
-              href="/ayarlar/entegrasyon"
-              className="text-sm text-darkGreen hover:text-lightGreen flex items-center gap-1 transition-colors"
-            >
-              Entegrasyon Ayarları
-              <ExternalLink className="w-4 h-4" />
-            </a>
-            <button
-              onClick={importShopifyProducts}
-              disabled={importing || !shopifyStore?.is_active}
-              className="flex items-center gap-2 bg-lightGreen text-white px-4 py-2 rounded-lg hover:bg-darkGreen transition-colors disabled:opacity-50"
-            >
-              <Download className="w-5 h-5" />
-              {importing ? 'İçe Aktarılıyor...' : 'Shopify Ürünlerini İçe Aktar'}
-            </button>
-            <button
-              onClick={() => setShowProductForm(true)}
-              className="flex items-center gap-2 bg-darkGreen text-white px-4 py-2 rounded-lg hover:bg-lightGreen transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Yeni Ürün Ekle
-            </button>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-4 md:mt-0">
+              <a
+                href="/ayarlar/entegrasyon"
+                className="text-sm text-darkGreen hover:text-lightGreen flex items-center gap-1 transition-colors"
+              >
+                Entegrasyon Ayarları
+                <ExternalLink className="w-4 h-4" />
+              </a>
+              <button
+                onClick={importShopifyProducts}
+                disabled={importing || !shopifyStore?.is_active}
+                className="flex items-center gap-2 bg-lightGreen text-white px-3 py-2 rounded-lg hover:bg-darkGreen transition-colors disabled:opacity-50 text-sm w-full sm:w-auto justify-center"
+              >
+                <Download className="w-4 h-4" />
+                {importing ? 'İçe Aktarılıyor...' : 'Shopify Ürünlerini İçe Aktar'}
+              </button>
+              <button
+                onClick={() => setShowProductForm(true)}
+                className="flex items-center gap-2 bg-darkGreen text-white px-3 py-2 rounded-lg hover:bg-lightGreen transition-colors text-sm w-full sm:w-auto justify-center"
+              >
+                <Plus className="w-4 h-4" />
+                Yeni Ürün Ekle
+              </button>
+            </div>
           </div>
         </div>
 
@@ -250,78 +254,80 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ürün Adı
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ürün Kodu
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stok Kodu
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fiyat
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    KDV
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Boyutlar
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Shopify Mağazası
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    İşlemler
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                      {product.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.code}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.sku}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.price} TL
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      %{product.vat_rate}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.width}x{product.height}x{product.length} cm
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.shopify_store ? (
-                        <span className="inline-flex items-center">
-                          <Store className="w-4 h-4 mr-1 text-blue-500" />
-                          {product.shopify_store}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button
-                        onClick={() => handleDeleteProduct(product.id, product.name)}
-                        className="text-red-600 hover:text-red-900 transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ürün Adı
+                    </th>
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ürün Kodu
+                    </th>
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Stok Kodu
+                    </th>
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Fiyat
+                    </th>
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      KDV
+                    </th>
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Boyutlar
+                    </th>
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Shopify
+                    </th>
+                    <th className="px-2 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      İşlemler
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {products.map((product) => (
+                    <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-black">
+                        {product.name}
+                      </td>
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                        {product.code}
+                      </td>
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                        {product.sku}
+                      </td>
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                        {product.price} TL
+                      </td>
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                        %{product.vat_rate}
+                      </td>
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                        {product.width}x{product.height}x{product.length} cm
+                      </td>
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                        {product.shopify_store ? (
+                          <span className="inline-flex items-center">
+                            <Store className="w-4 h-4 mr-1 text-blue-500" />
+                            <span className="hidden sm:inline">{product.shopify_store}</span>
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-right text-xs sm:text-sm">
+                        <button
+                          onClick={() => handleDeleteProduct(product.id, product.name)}
+                          className="text-red-600 hover:text-red-900 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

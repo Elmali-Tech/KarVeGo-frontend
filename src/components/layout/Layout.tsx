@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Package, Menu, LogOut, Settings, Box, Users, FileText, DollarSign, LayoutDashboard, Plus, Upload, CheckCircle } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
-import { Link } from 'react-router-dom';
+import Header from '../Header';
+import Sidebar from '../Sidebar';
+import { CheckCircle, Upload, X } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [balance, setBalance] = useState(0);
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
@@ -24,6 +24,31 @@ export default function Layout({ children }: LayoutProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   
   const isSettingsPage = location.pathname.startsWith('/ayarlar');
+
+  // Set sidebar open by default on large screens
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) { // lg breakpoint
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    // Listen for window resize
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Close sidebar on route change for mobile
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+      setIsSidebarOpen(false);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const checkAdminRole = async () => {
@@ -85,17 +110,6 @@ export default function Layout({ children }: LayoutProps) {
       window.removeEventListener('balanceUpdated', handleBalanceUpdate as EventListener);
     };
   }, [user]);
-
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      navigate('/');
-    } catch (error) {
-      console.error('Çıkış hatası:', error);
-      toast.error('Çıkış yapılırken bir hata oluştu');
-    }
-  };
 
   const openBalanceModal = () => {
     setIsBalanceModalOpen(true);
@@ -177,115 +191,79 @@ export default function Layout({ children }: LayoutProps) {
     }
   };
 
+  // Add overlay for mobile sidebar
+  const handleOverlayClick = () => {
+    setIsSidebarOpen(false);
+  };
+
+  // Disable body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (isSidebarOpen && window.innerWidth < 1024) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isSidebarOpen]);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-lightGreen shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="text-darkGreen hover:text-lightGreen lg:hidden transition-colors"
-              >
-                <Menu className="w-6 h-6" />
-              </button>
-              <div className="flex items-center gap-2 ml-4 lg:ml-0">
-                <Package className="w-8 h-8 text-darkGreen" />
-                <span className="text-xl font-semibold text-black">KarVeGo</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center">
-                <div className="text-sm text-gray-600 mr-2">
-                  Bakiye: <span className="font-medium text-darkGreen">{balance.toFixed(2)} TL</span>
-                </div>
-                <button
-                  onClick={openBalanceModal}
-                  className="flex items-center justify-center p-1.5 bg-lightGreen rounded-full text-white hover:bg-darkGreen transition-colors"
-                  title="Bakiye Ekle"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>{user?.email}</span>
-                <button
-                  onClick={handleLogout}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Header Component */}
+      <Header 
+        isSidebarOpen={isSidebarOpen} 
+        setIsSidebarOpen={setIsSidebarOpen} 
+        balance={balance} 
+        openBalanceModal={openBalanceModal} 
+      />
+
+      {/* Mobile Sidebar Overlay with blur */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
+          onClick={handleOverlayClick}
+          aria-hidden="true"
+        ></div>
+      )}
+
+      {/* Mobile Sidebar Container */}
+      <div 
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:hidden ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="h-16 border-b border-gray-200 flex items-center justify-between px-4">
+          <span className="text-lg font-semibold text-darkGreen">Menü</span>
+          <button 
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+            aria-label="Menüyü Kapat"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
         </div>
-      </header>
+        <div className="p-4 h-[calc(100%-4rem)] overflow-y-auto">
+          <Sidebar
+            isAdmin={isAdmin}
+            isSettingsPage={isSettingsPage}
+          />
+        </div>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
-          {/* Main Navigation */}
-          <aside className={`w-64 shrink-0 ${isSidebarOpen ? 'block' : 'hidden'} lg:block`}>
-            <nav className="space-y-1 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-              {isAdmin && (
-                <MainNavLink href="/admin" icon={<LayoutDashboard className="w-5 h-5" />}>
-                  Admin Paneli
-                </MainNavLink>
-              )}
-              <MainNavLink href="/siparisler" icon={<FileText className="w-5 h-5" />}>
-                Siparişler
-              </MainNavLink>
-              <MainNavLink href="/urunler" icon={<Box className="w-5 h-5" />}>
-                Ürünler
-              </MainNavLink>
-              <MainNavLink href="/musteriler" icon={<Users className="w-5 h-5" />}>
-                Müşteriler
-              </MainNavLink>
-              <MainNavLink href="/ayarlar" icon={<Settings className="w-5 h-5" />}>
-                Ayarlar
-              </MainNavLink>
-              <Link
-                to="/kargo-fiyatlari"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 ${
-                  location.pathname === '/kargo-fiyatlari' ? 'bg-lightGreen bg-opacity-10 text-darkGreen' : 'text-gray-700'
-                }`}
-              >
-                <DollarSign className={`w-5 h-5 ${location.pathname === '/kargo-fiyatlari' ? 'text-darkGreen' : 'text-gray-500'}`} />
-                <span className="text-sm font-medium">Kargo Fiyatları</span>
-              </Link>
-            </nav>
-
-            {/* Settings Sub-Navigation */}
-            {isSettingsPage && (
-              <nav className="mt-4 space-y-1 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                <h3 className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2 px-3">Ayarlar</h3>
-                <SubNavLink href="/ayarlar/hesap-bilgileri">
-                  Hesap Bilgileri
-                </SubNavLink>
-                <SubNavLink href="/ayarlar/gonderici-profili">
-                  Gönderici Profili
-                </SubNavLink>
-                <SubNavLink href="/ayarlar/adreslerim">
-                  Adreslerim
-                </SubNavLink>
-                <SubNavLink href="/ayarlar/entegrasyon">
-                  Entegrasyon / Uygulama
-                </SubNavLink>
-                <SubNavLink href="/ayarlar/anlasmam">
-                  Kendi Anlaşmamı Ekle
-                </SubNavLink>
-                <SubNavLink href="/ayarlar/barkod-ayarlari">
-                  Barkod Ayarları
-                </SubNavLink>
-                <SubNavLink href="/ayarlar/sifre-degistir">
-                  Şifre Değiştir
-                </SubNavLink>
-              </nav>
-            )}
-          </aside>
+        <div className="flex gap-8 relative">
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:block">
+            <Sidebar 
+              isAdmin={isAdmin}
+              isSettingsPage={isSettingsPage}
+            />
+          </div>
 
           {/* Main Content */}
-          <main className="flex-1 min-w-0 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+          <main className="flex-1 min-w-0 bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100">
             {children}
           </main>
         </div>
@@ -293,8 +271,8 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Bakiye Ekleme Modal */}
       {isBalanceModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <h3 className="text-lg font-semibold text-darkGreen mb-4">Bakiye Yükleme Talebi</h3>
               <form onSubmit={submitBalanceRequest}>
@@ -400,55 +378,5 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       )}
     </div>
-  );
-}
-
-interface MainNavLinkProps {
-  href: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}
-
-function MainNavLink({ href, icon, children }: MainNavLinkProps) {
-  const location = useLocation();
-  const isActive = location.pathname === href || location.pathname.startsWith(`${href}/`);
-  
-  return (
-    <a
-      href={href}
-      className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-        isActive
-          ? 'bg-lightGreen bg-opacity-10 text-darkGreen'
-          : 'text-gray-600 hover:bg-gray-50 hover:text-darkGreen'
-      }`}
-    >
-      <span className={isActive ? 'text-darkGreen' : 'text-gray-400'}>
-        {icon}
-      </span>
-      {children}
-    </a>
-  );
-}
-
-interface SubNavLinkProps {
-  href: string;
-  children: React.ReactNode;
-}
-
-function SubNavLink({ href, children }: SubNavLinkProps) {
-  const location = useLocation();
-  const isActive = location.pathname === href;
-  
-  return (
-    <a
-      href={href}
-      className={`block px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-        isActive
-          ? 'text-darkGreen bg-lightGreen bg-opacity-10'
-          : 'text-gray-600 hover:text-darkGreen hover:bg-gray-50'
-      }`}
-    >
-      {children}
-    </a>
   );
 }

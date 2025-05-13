@@ -376,22 +376,22 @@ export default function Orders() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6 px-2 sm:px-0">
         {/* Status Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-4">
           {/* Tümü Kartı */}
           <div 
-            className={`bg-white rounded-lg shadow p-4 cursor-pointer transition-all
+            className={`bg-white rounded-lg shadow p-3 md:p-4 cursor-pointer transition-all
               ${activeStatusFilter === 'ALL' 
                 ? 'border-2 border-blue-500 ring-2 ring-blue-500 ring-opacity-30' 
                 : 'border-l-4 border-gray-400 hover:shadow-md'}`}
             onClick={() => handleStatusCardClick('ALL')}
           >
-            <div className="flex items-center gap-3">
-              <Package className="w-6 h-6 text-gray-500" />
+            <div className="flex items-center gap-2 md:gap-3">
+              <Package className="w-5 h-5 md:w-6 md:h-6 text-gray-500" />
               <div>
-                <h3 className="text-sm font-medium text-gray-700">Tüm Siparişler</h3>
-                <p className="text-2xl font-semibold text-gray-700">
+                <h3 className="text-xs md:text-sm font-medium text-gray-700">Tüm Siparişler</h3>
+                <p className="text-xl md:text-2xl font-semibold text-gray-700">
                   {orders.length}
                 </p>
               </div>
@@ -399,17 +399,17 @@ export default function Orders() {
           </div>
           
           <div 
-            className={`bg-white rounded-lg shadow p-4 cursor-pointer transition-all
+            className={`bg-white rounded-lg shadow p-3 md:p-4 cursor-pointer transition-all
               ${activeStatusFilter === 'NEW' 
                 ? 'border-2 border-blue-500 ring-2 ring-blue-500 ring-opacity-30' 
                 : 'border-l-4 border-blue-500 hover:shadow-md'}`}
             onClick={() => handleStatusCardClick('NEW')}
           >
-            <div className="flex items-center gap-3">
-              <Package className="w-6 h-6 text-blue-500" />
+            <div className="flex items-center gap-2 md:gap-3">
+              <Package className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
               <div>
-                <h3 className="text-sm font-medium text-gray-700">Yeni Siparişler</h3>
-                <p className="text-2xl font-semibold text-blue-600">
+                <h3 className="text-xs md:text-sm font-medium text-gray-700">Yeni Siparişler</h3>
+                <p className="text-xl md:text-2xl font-semibold text-blue-600">
                   {orders.filter(o => o.status === 'NEW').length}
                 </p>
               </div>
@@ -417,17 +417,17 @@ export default function Orders() {
           </div>
 
           <div 
-            className={`bg-white rounded-lg shadow p-4 cursor-pointer transition-all
+            className={`bg-white rounded-lg shadow p-3 md:p-4 cursor-pointer transition-all
               ${activeStatusFilter === 'READY' 
                 ? 'border-2 border-yellow-500 ring-2 ring-yellow-500 ring-opacity-30' 
                 : 'border-l-4 border-yellow-500 hover:shadow-md'}`}
             onClick={() => handleStatusCardClick('READY')}
           >
-            <div className="flex items-center gap-3">
-              <FileText className="w-6 h-6 text-yellow-500" />
+            <div className="flex items-center gap-2 md:gap-3">
+              <FileText className="w-5 h-5 md:w-6 md:h-6 text-yellow-500" />
               <div>
-                <h3 className="text-sm font-medium text-gray-700">Hazırlanan</h3>
-                <p className="text-2xl font-semibold text-yellow-600">
+                <h3 className="text-xs md:text-sm font-medium text-gray-700">Hazırlanan</h3>
+                <p className="text-xl md:text-2xl font-semibold text-yellow-600">
                   {orders.filter(o => o.status === 'READY').length}
                 </p>
               </div>
@@ -435,17 +435,17 @@ export default function Orders() {
           </div>
 
           <div 
-            className={`bg-white rounded-lg shadow p-4 cursor-pointer transition-all
+            className={`bg-white rounded-lg shadow p-3 md:p-4 cursor-pointer transition-all
               ${activeStatusFilter === 'PRINTED' 
                 ? 'border-2 border-purple-500 ring-2 ring-purple-500 ring-opacity-30' 
                 : 'border-l-4 border-purple-500 hover:shadow-md'}`}
             onClick={() => handleStatusCardClick('PRINTED')}
           >
-            <div className="flex items-center gap-3">
-              <FileText className="w-6 h-6 text-purple-500" />
+            <div className="flex items-center gap-2 md:gap-3">
+              <FileText className="w-5 h-5 md:w-6 md:h-6 text-purple-500" />
               <div>
-                <h3 className="text-sm font-medium text-gray-700">Yazdırılan</h3>
-                <p className="text-2xl font-semibold text-purple-600">
+                <h3 className="text-xs md:text-sm font-medium text-gray-700">Yazdırılan</h3>
+                <p className="text-xl md:text-2xl font-semibold text-purple-600">
                   {orders.filter(o => o.status === 'PRINTED').length}
                 </p>
               </div>
@@ -453,17 +453,17 @@ export default function Orders() {
           </div>
 
           <div 
-            className={`bg-white rounded-lg shadow p-4 cursor-pointer transition-all
+            className={`bg-white rounded-lg shadow p-3 md:p-4 cursor-pointer transition-all
               ${activeStatusFilter === 'SHIPPED' 
                 ? 'border-2 border-green-500 ring-2 ring-green-500 ring-opacity-30' 
                 : 'border-l-4 border-green-500 hover:shadow-md'}`}
             onClick={() => handleStatusCardClick('SHIPPED')}
           >
-            <div className="flex items-center gap-3">
-              <Truck className="w-6 h-6 text-green-500" />
+            <div className="flex items-center gap-2 md:gap-3">
+              <Truck className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
               <div>
-                <h3 className="text-sm font-medium text-gray-700">Kargoya Verilen</h3>
-                <p className="text-2xl font-semibold text-green-600">
+                <h3 className="text-xs md:text-sm font-medium text-gray-700">Kargoya Verilen</h3>
+                <p className="text-xl md:text-2xl font-semibold text-green-600">
                   {orders.filter(o => o.status === 'SHIPPED').length}
                 </p>
               </div>
@@ -471,17 +471,17 @@ export default function Orders() {
           </div>
 
           <div 
-            className={`bg-white rounded-lg shadow p-4 cursor-pointer transition-all
+            className={`bg-white rounded-lg shadow p-3 md:p-4 cursor-pointer transition-all
               ${activeStatusFilter === 'PROBLEMATIC' 
                 ? 'border-2 border-red-500 ring-2 ring-red-500 ring-opacity-30' 
                 : 'border-l-4 border-red-500 hover:shadow-md'}`}
             onClick={() => handleStatusCardClick('PROBLEMATIC')}
           >
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-6 h-6 text-red-500" />
+            <div className="flex items-center gap-2 md:gap-3">
+              <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-red-500" />
               <div>
-                <h3 className="text-sm font-medium text-gray-700">Sorunlu</h3>
-                <p className="text-2xl font-semibold text-red-600">
+                <h3 className="text-xs md:text-sm font-medium text-gray-700">Sorunlu</h3>
+                <p className="text-xl md:text-2xl font-semibold text-red-600">
                   {orders.filter(o => o.status === 'PROBLEMATIC').length}
                 </p>
               </div>
@@ -489,17 +489,17 @@ export default function Orders() {
           </div>
 
           <div 
-            className={`bg-white rounded-lg shadow p-4 cursor-pointer transition-all
+            className={`bg-white rounded-lg shadow p-3 md:p-4 cursor-pointer transition-all
               ${activeStatusFilter === 'COMPLETED' 
                 ? 'border-2 border-teal-500 ring-2 ring-teal-500 ring-opacity-30' 
                 : 'border-l-4 border-teal-500 hover:shadow-md'}`}
             onClick={() => handleStatusCardClick('COMPLETED')}
           >
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 text-teal-500" />
+            <div className="flex items-center gap-2 md:gap-3">
+              <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-teal-500" />
               <div>
-                <h3 className="text-sm font-medium text-gray-700">Tamamlanan</h3>
-                <p className="text-2xl font-semibold text-teal-600">
+                <h3 className="text-xs md:text-sm font-medium text-gray-700">Tamamlanan</h3>
+                <p className="text-xl md:text-2xl font-semibold text-teal-600">
                   {orders.filter(o => o.status === 'COMPLETED').length}
                 </p>
               </div>
@@ -508,14 +508,14 @@ export default function Orders() {
         </div>
 
         {/* Shopify Integration Card */}
-        <div className="flex items-center justify-between bg-white rounded-lg shadow p-6">
-          <div className="flex items-center gap-4">
-            <Store className="w-6 h-6 text-darkGreen" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white rounded-lg shadow p-4 md:p-6 gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
+            <Store className="w-6 h-6 text-darkGreen shrink-0" />
             <div>
-              <h2 className="text-lg font-medium text-gray-900">Shopify Entegrasyonu</h2>
+              <h2 className="text-base md:text-lg font-medium text-gray-900">Shopify Entegrasyonu</h2>
               {shopifyStore ? (
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="text-sm text-gray-600">{shopifyStore.shop_url}</span>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <span className="text-xs md:text-sm text-gray-600">{shopifyStore.shop_url}</span>
                   <span className={`px-2 py-0.5 text-xs rounded-full ${
                     shopifyStore.is_active 
                       ? 'bg-lightGreen text-white' 
@@ -525,26 +525,26 @@ export default function Orders() {
                   </span>
                 </div>
               ) : (
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-xs md:text-sm text-gray-600">
                   Henüz Shopify mağazası bağlanmamış
                 </p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-2 sm:mt-0">
             <a
               href="/ayarlar/entegrasyon"
-              className="text-sm text-darkGreen hover:text-lightGreen flex items-center gap-1"
+              className="text-xs md:text-sm text-darkGreen hover:text-lightGreen flex items-center gap-1 w-full sm:w-auto"
             >
               Entegrasyon Ayarları
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-3 h-3 md:w-4 md:h-4" />
             </a>
             <button
               onClick={importShopifyOrders}
               disabled={importing || !shopifyStore?.is_active}
-              className="flex items-center gap-2 bg-darkGreen text-white px-4 py-2 rounded-lg hover:bg-lightGreen transition-colors disabled:opacity-50"
+              className="flex items-center justify-center gap-1 md:gap-2 bg-darkGreen text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-lightGreen transition-colors disabled:opacity-50 text-xs md:text-sm w-full sm:w-auto"
             >
-              <Download className="w-5 h-5" />
+              <Download className="w-4 h-4 md:w-5 md:h-5" />
               {importing ? 'İçe Aktarılıyor...' : 'Shopify Siparişlerini İçe Aktar'}
             </button>
           </div>
@@ -552,14 +552,14 @@ export default function Orders() {
 
         {/* Import Progress */}
         {importProgress && (
-          <div className="bg-lightGreen bg-opacity-10 border border-lightGreen rounded-lg p-4">
+          <div className="bg-lightGreen bg-opacity-10 border border-lightGreen rounded-lg p-3 md:p-4 overflow-x-auto">
             <div className="flex items-center gap-2 mb-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-darkGreen border-t-transparent"></div>
-              <span className="text-darkGreen font-medium">{importProgress}</span>
+              <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-2 border-darkGreen border-t-transparent"></div>
+              <span className="text-darkGreen font-medium text-xs md:text-sm">{importProgress}</span>
             </div>
-            <div className="space-y-1 text-sm text-darkGreen font-mono">
+            <div className="space-y-1 text-xs md:text-sm text-darkGreen font-mono">
               {importLogs.map((log, index) => (
-                <div key={index}>{log}</div>
+                <div key={index} className="overflow-x-auto whitespace-nowrap md:whitespace-normal">{log}</div>
               ))}
             </div>
           </div>
@@ -567,9 +567,9 @@ export default function Orders() {
 
         {/* Filtreleme Bilgisi */}
         {activeStatusFilter !== 'ALL' && (
-          <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4 gap-2">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-blue-700">
+              <span className="font-medium text-blue-700 text-xs md:text-sm">
                 {activeStatusFilter === 'NEW' && 'Yeni Siparişler'}
                 {activeStatusFilter === 'READY' && 'Hazırlanan Siparişler'}
                 {activeStatusFilter === 'PRINTED' && 'Yazdırılan Siparişler'}
@@ -578,10 +578,10 @@ export default function Orders() {
                 {activeStatusFilter === 'COMPLETED' && 'Tamamlanan Siparişler'}
                 {' '}gösteriliyor.
               </span>
-              <span className="text-sm text-blue-600">({filteredOrders.length} sipariş)</span>
+              <span className="text-xs text-blue-600">({filteredOrders.length} sipariş)</span>
             </div>
             <button 
-              className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+              className="text-blue-600 hover:text-blue-800 text-xs md:text-sm flex items-center gap-1"
               onClick={() => handleStatusCardClick('ALL')}
             >
               Filtreyi Temizle
@@ -590,25 +590,27 @@ export default function Orders() {
         )}
 
         {/* Orders Table */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-4 border-b">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">Siparişler</h2>
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="p-3 md:p-4 border-b">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <h2 className="text-base md:text-lg font-medium text-gray-900">Siparişler</h2>
               <button
                 onClick={() => setShowNewOrderModal(true)}
-                className="flex items-center gap-2 bg-darkGreen text-white px-4 py-2 rounded-lg hover:bg-lightGreen transition-colors"
+                className="flex items-center justify-center gap-1 md:gap-2 bg-darkGreen text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-lightGreen transition-colors text-xs md:text-sm w-full sm:w-auto"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4 md:w-5 md:h-5" />
                 Yeni Sipariş
               </button>
             </div>
           </div>
 
-          <OrdersTable
-            orders={filteredOrders}
-            loading={loading}
-            onOrderUpdate={fetchOrders}
-          />
+          <div className="overflow-x-auto">
+            <OrdersTable
+              orders={filteredOrders}
+              loading={loading}
+              onOrderUpdate={fetchOrders}
+            />
+          </div>
         </div>
 
         {/* Yeni Sipariş Modal */}
