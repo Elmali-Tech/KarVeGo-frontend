@@ -242,18 +242,18 @@ const BalanceRequests = () => {
   };
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-semibold flex items-center">
-          <DollarSign className="mr-2 h-6 w-6 text-darkGreen" />
+    <div className="p-3 md:p-6">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-semibold flex items-center">
+          <DollarSign className="mr-2 h-5 w-5 md:h-6 md:w-6 text-darkGreen" />
           Bakiye Talep Yönetimi
         </h1>
         <div className="flex flex-col sm:flex-row gap-2">
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <input
               type="text"
               placeholder="Ara..."
-              className="pl-10 pr-4 py-2 border rounded-lg focus:ring-darkGreen focus:border-darkGreen w-full sm:w-auto"
+              className="pl-10 pr-4 py-2 border rounded-lg focus:ring-darkGreen focus:border-darkGreen w-full"
               value={searchTerm}
               onChange={handleSearch}
             />
@@ -270,12 +270,12 @@ const BalanceRequests = () => {
         </div>
       </div>
       
-      <div className="bg-white p-3 rounded-lg shadow-sm mb-4 overflow-x-auto border border-gray-100">
-        <div className="flex items-center space-x-1 flex-wrap">
-          <Filter className="h-4 w-4 text-gray-500 mr-2" />
+      <div className="bg-white p-2 md:p-3 rounded-lg shadow-sm mb-4 overflow-x-auto border border-gray-100">
+        <div className="flex items-center space-x-1 flex-wrap gap-1">
+          <Filter className="h-4 w-4 text-gray-500 mr-1" />
           <button
             type="button"
-            className={`px-3 py-1.5 rounded-md text-sm whitespace-nowrap mb-1 sm:mb-0 ${statusFilter === 'all' 
+            className={`px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm whitespace-nowrap ${statusFilter === 'all' 
               ? 'bg-darkGreen bg-opacity-10 text-darkGreen font-medium border border-darkGreen border-opacity-30' 
               : 'hover:bg-gray-100'}`}
             onClick={() => handleStatusFilter('all')}
@@ -284,7 +284,7 @@ const BalanceRequests = () => {
           </button>
           <button
             type="button"
-            className={`px-3 py-1.5 rounded-md text-sm flex items-center whitespace-nowrap mb-1 sm:mb-0 ${statusFilter === 'PENDING' 
+            className={`px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm flex items-center whitespace-nowrap ${statusFilter === 'PENDING' 
               ? 'bg-yellow-100 text-yellow-800 font-medium border border-yellow-300' 
               : 'hover:bg-gray-100'}`}
             onClick={() => handleStatusFilter('PENDING')}
@@ -294,7 +294,7 @@ const BalanceRequests = () => {
           </button>
           <button
             type="button"
-            className={`px-3 py-1.5 rounded-md text-sm flex items-center whitespace-nowrap mb-1 sm:mb-0 ${statusFilter === 'APPROVED' 
+            className={`px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm flex items-center whitespace-nowrap ${statusFilter === 'APPROVED' 
               ? 'bg-lightGreen bg-opacity-20 text-darkGreen font-medium border border-lightGreen border-opacity-30' 
               : 'hover:bg-gray-100'}`}
             onClick={() => handleStatusFilter('APPROVED')}
@@ -304,7 +304,7 @@ const BalanceRequests = () => {
           </button>
           <button
             type="button"
-            className={`px-3 py-1.5 rounded-md text-sm flex items-center whitespace-nowrap mb-1 sm:mb-0 ${statusFilter === 'REJECTED' 
+            className={`px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm flex items-center whitespace-nowrap ${statusFilter === 'REJECTED' 
               ? 'bg-red-100 text-red-800 font-medium border border-red-300' 
               : 'hover:bg-gray-100'}`}
             onClick={() => handleStatusFilter('REJECTED')}
@@ -321,57 +321,61 @@ const BalanceRequests = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  className="px-3 py-2 md:px-4 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('created_at')}
                 >
                   <div className="flex items-center">
-                    Talep Tarihi
+                    <span className="hidden sm:inline">Talep Tarihi</span>
+                    <span className="sm:hidden">Tarih</span>
                     {sortField === 'created_at' && (
-                      <ArrowUpDown className="ml-1 h-4 w-4" />
+                      <ArrowUpDown className="ml-1 h-3 w-3 md:h-4 md:w-4" />
                     )}
                   </div>
                 </th>
                 <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-3 py-2 md:px-4 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
                   <div className="flex items-center">
                     Kullanıcı
                   </div>
                 </th>
                 <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  className="px-3 py-2 md:px-4 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('amount')}
                 >
                   <div className="flex items-center">
                     Tutar
                     {sortField === 'amount' && (
-                      <ArrowUpDown className="ml-1 h-4 w-4" />
+                      <ArrowUpDown className="ml-1 h-3 w-3 md:h-4 md:w-4" />
                     )}
                   </div>
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Belge
+                <th className="px-3 py-2 md:px-4 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <span className="hidden sm:inline">Belge</span>
+                  <span className="sm:hidden">Blg</span>
                 </th>
                 <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  className="px-3 py-2 md:px-4 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('status')}
                 >
                   <div className="flex items-center">
-                    Durum
+                    <span className="hidden sm:inline">Durum</span>
+                    <span className="sm:hidden">Drm</span>
                     {sortField === 'status' && (
-                      <ArrowUpDown className="ml-1 h-4 w-4" />
+                      <ArrowUpDown className="ml-1 h-3 w-3 md:h-4 md:w-4" />
                     )}
                   </div>
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  İşlemler
+                <th className="px-3 py-2 md:px-4 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <span className="hidden sm:inline">İşlemler</span>
+                  <span className="sm:hidden">İşl</span>
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center">
+                  <td colSpan={6} className="px-4 py-3 text-center">
                     <div className="flex justify-center items-center">
                       <svg className="animate-spin h-5 w-5 text-darkGreen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -383,11 +387,11 @@ const BalanceRequests = () => {
                 </tr>
               ) : requests.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                    <div className="flex flex-col items-center py-6">
-                      <DollarSign className="h-10 w-10 text-gray-300 mb-2" />
-                      <p className="text-gray-500 mb-1">Bakiye talebi bulunamadı</p>
-                      <p className="text-sm text-gray-400">Filtreleri değiştirerek tekrar deneyin</p>
+                  <td colSpan={6} className="px-4 py-3 text-center text-gray-500">
+                    <div className="flex flex-col items-center py-4 md:py-6">
+                      <DollarSign className="h-8 w-8 md:h-10 md:w-10 text-gray-300 mb-2" />
+                      <p className="text-gray-500 mb-1 text-sm md:text-base">Bakiye talebi bulunamadı</p>
+                      <p className="text-xs md:text-sm text-gray-400">Filtreleri değiştirerek tekrar deneyin</p>
                     </div>
                   </td>
                 </tr>
@@ -395,96 +399,105 @@ const BalanceRequests = () => {
                 requests.map((request) => {
                   return (
                     <tr key={request.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">
+                      <td className="px-3 py-2 md:px-4 md:py-4 whitespace-nowrap">
+                        <div className="text-xs md:text-sm text-gray-600">
                           {new Date(request.created_at).toLocaleDateString('tr-TR')}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 hidden sm:block">
                           {new Date(request.created_at).toLocaleTimeString('tr-TR')}
                         </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className="px-3 py-2 md:px-4 md:py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8 bg-darkGreen bg-opacity-10 text-darkGreen rounded-full flex items-center justify-center">
+                          <div className="flex-shrink-0 h-6 w-6 md:h-8 md:w-8 bg-darkGreen bg-opacity-10 text-darkGreen rounded-full flex items-center justify-center text-xs md:text-sm">
                             {request.user_details?.full_name ? request.user_details.full_name.charAt(0).toUpperCase() : 'U'}
                           </div>
-                          <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900">
+                          <div className="ml-2 md:ml-3">
+                            <div className="text-xs md:text-sm font-medium text-gray-900">
                               {request.user_details?.full_name || 'İsimsiz'}
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-gray-500 hidden sm:block">
                               {request.user_details?.email}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+                      <td className="px-3 py-2 md:px-4 md:py-4 whitespace-nowrap">
+                        <div className="text-xs md:text-sm font-medium text-gray-900">
                           {request.amount.toFixed(2)} TL
                         </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className="px-3 py-2 md:px-4 md:py-4 whitespace-nowrap">
                         {request.proof_document ? (
                           <button
                             onClick={() => openDocument(request.proof_document)}
-                            className="inline-flex items-center px-2.5 py-1.5 bg-darkGreen bg-opacity-10 text-darkGreen rounded-md hover:bg-opacity-20 transition-colors text-xs font-medium"
+                            className="inline-flex items-center px-1.5 py-1 md:px-2.5 md:py-1.5 bg-darkGreen bg-opacity-10 text-darkGreen rounded-md hover:bg-opacity-20 transition-colors text-xs font-medium"
                           >
-                            <FileText className="h-3.5 w-3.5 mr-1" />
-                            Belgeyi Görüntüle
-                            <ExternalLink className="ml-1 h-3 w-3" />
+                            <FileText className="h-3 w-3 md:h-3.5 md:w-3.5 mr-0.5 md:mr-1" />
+                            <span className="hidden sm:inline">Belgeyi Görüntüle</span>
+                            <span className="sm:hidden">Görüntüle</span>
+                            <ExternalLink className="ml-0.5 md:ml-1 h-2.5 w-2.5 md:h-3 md:w-3" />
                           </button>
                         ) : (
-                          <span className="text-xs text-gray-500 italic">Belge yok</span>
+                          <span className="text-xs text-gray-500 italic">Yok</span>
                         )}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className="px-3 py-2 md:px-4 md:py-4 whitespace-nowrap">
                         {request.status === 'APPROVED' ? (
-                          <span className="px-2.5 py-1.5 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-lightGreen bg-opacity-20 text-darkGreen border border-lightGreen border-opacity-30">
-                            <CheckCircle className="mr-1 h-3 w-3" />
-                            Onaylandı
+                          <span className="px-1.5 py-1 md:px-2.5 md:py-1.5 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-lightGreen bg-opacity-20 text-darkGreen border border-lightGreen border-opacity-30">
+                            <CheckCircle className="mr-0.5 md:mr-1 h-3 w-3" />
+                            <span className="hidden sm:inline">Onaylandı</span>
+                            <span className="sm:hidden">Onay</span>
                           </span>
                         ) : request.status === 'PENDING' ? (
-                          <span className="px-2.5 py-1.5 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">
-                            <Clock className="mr-1 h-3 w-3" />
-                            Onay Bekliyor
+                          <span className="px-1.5 py-1 md:px-2.5 md:py-1.5 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">
+                            <Clock className="mr-0.5 md:mr-1 h-3 w-3" />
+                            <span className="hidden sm:inline">Onay Bekliyor</span>
+                            <span className="sm:hidden">Bekliyor</span>
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1.5 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-300">
-                            <XCircle className="mr-1 h-3 w-3" />
-                            Reddedildi
+                          <span className="px-1.5 py-1 md:px-2.5 md:py-1.5 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-300">
+                            <XCircle className="mr-0.5 md:mr-1 h-3 w-3" />
+                            <span className="hidden sm:inline">Reddedildi</span>
+                            <span className="sm:hidden">Red</span>
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className="px-3 py-2 md:px-4 md:py-4 whitespace-nowrap">
                         {processingId === request.id ? (
                           <div className="flex justify-center">
-                            <svg className="animate-spin h-5 w-5 text-darkGreen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-4 w-4 md:h-5 md:w-5 text-darkGreen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                           </div>
                         ) : request.status === 'PENDING' ? (
-                          <div className="flex justify-end space-x-2">
+                          <div className="flex justify-end space-x-1 md:space-x-2">
                             <button 
                               type="button"
                               onClick={() => approveBalanceRequest(request.id, request.user_id, request.amount)}
-                              className="p-1.5 rounded-full bg-lightGreen bg-opacity-20 text-darkGreen hover:bg-opacity-30 transition-colors hover:shadow-sm"
+                              className="p-1 md:p-1.5 rounded-full bg-lightGreen bg-opacity-20 text-darkGreen hover:bg-opacity-30 transition-colors hover:shadow-sm"
                               title="Onayla"
                             >
-                              <CheckCircle className="h-4 w-4" />
+                              <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4" />
                             </button>
                             <button 
                               type="button"
                               onClick={() => rejectBalanceRequest(request.id)}
-                              className="p-1.5 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors hover:shadow-sm"
+                              className="p-1 md:p-1.5 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors hover:shadow-sm"
                               title="Reddet"
                             >
-                              <XCircle className="h-4 w-4" />
+                              <XCircle className="h-3.5 w-3.5 md:h-4 md:w-4" />
                             </button>
                           </div>
                         ) : (
                           <div className="text-xs text-gray-500 italic">
-                            {request.status === 'APPROVED' ? 'İşlem tamamlandı' : 'Talep reddedildi'}
+                            <span className="hidden sm:inline">
+                              {request.status === 'APPROVED' ? 'İşlem tamamlandı' : 'Talep reddedildi'}
+                            </span>
+                            <span className="sm:hidden">
+                              {request.status === 'APPROVED' ? 'Tamamlandı' : 'Reddedildi'}
+                            </span>
                           </div>
                         )}
                       </td>
@@ -498,26 +511,26 @@ const BalanceRequests = () => {
         
         {/* Sayfalandırma */}
         {!loading && requests.length > 0 && totalPages > 1 && (
-          <div className="px-6 py-3 flex items-center justify-between border-t border-gray-200">
+          <div className="px-3 py-2 md:px-6 md:py-3 flex items-center justify-between border-t border-gray-200">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Önceki
               </button>
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="ml-3 relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Sonraki
               </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-gray-700">
+                <p className="text-xs md:text-sm text-gray-700">
                   <span className="font-medium">{totalCount}</span> sonuçtan{' '}
                   <span className="font-medium">{Math.max(1, (currentPage - 1) * itemsPerPage + 1)}</span>-
                   <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalCount)}</span> arası gösteriliyor

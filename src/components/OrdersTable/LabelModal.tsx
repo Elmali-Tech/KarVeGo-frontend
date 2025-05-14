@@ -1,5 +1,5 @@
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { Order, SenderAddress } from './types';
 import { formatPrice } from './utils';
 
@@ -10,6 +10,7 @@ interface LabelModalProps {
   selectedSenderAddress: SenderAddress | null;
   labelPrice: number;
   isLoading: boolean;
+  balanceError?: string;
   handleSenderAddressChange: (addressId: number) => void;
   handleCreateLabel: () => void;
   setIsLabelModalOpen: (isOpen: boolean) => void;
@@ -22,6 +23,7 @@ const LabelModal: React.FC<LabelModalProps> = ({
   selectedSenderAddress,
   labelPrice,
   isLoading,
+  balanceError,
   handleSenderAddressChange,
   handleCreateLabel,
   setIsLabelModalOpen
@@ -48,6 +50,22 @@ const LabelModal: React.FC<LabelModalProps> = ({
             </h3>
             <div className="mt-4">
               <div className="p-4 space-y-6">
+                {balanceError && (
+                  <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800">Bakiye Hatası</h3>
+                        <div className="mt-2 text-sm text-red-700">
+                          <p>{balanceError}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bg-gray-50 p-4 rounded-md">
                   <h3 className="text-sm font-medium text-darkGreen mb-2">Sipariş Bilgileri</h3>
                   <div className="space-y-1 text-sm text-gray-700">
@@ -98,8 +116,8 @@ const LabelModal: React.FC<LabelModalProps> = ({
                   </button>
                   <button
                     onClick={handleCreateLabel}
-                    disabled={!selectedSenderAddress || isLoading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-darkGreen hover:bg-lightGreen rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!selectedSenderAddress || isLoading || !!balanceError}
+                    className={`px-4 py-2 text-sm font-medium text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed ${balanceError ? 'bg-gray-400' : 'bg-darkGreen hover:bg-lightGreen'}`}
                   >
                     {isLoading ? (
                       <span className="flex items-center">

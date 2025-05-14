@@ -296,7 +296,14 @@ export default function Layout({ children }: LayoutProps) {
                   <label htmlFor="balanceFile" className="block text-sm font-medium text-gray-700 mb-1">
                     Ödeme Belgesi (Dekont, Makbuz vb.)
                   </label>
-                  <div className={`w-full border-2 border-dashed rounded-lg p-4 ${balanceFile ? 'border-lightGreen bg-lightGreen bg-opacity-10' : 'border-gray-300 hover:border-darkGreen'} transition-colors`}>
+                  <div 
+                    className={`w-full border-2 border-dashed rounded-lg p-4 ${balanceFile ? 'border-lightGreen bg-lightGreen bg-opacity-10' : 'border-gray-300 hover:border-darkGreen'} transition-colors cursor-pointer`}
+                    onClick={() => {
+                      if (!balanceFile) {
+                        document.getElementById('balanceFile')?.click();
+                      }
+                    }}
+                  >
                     <div className="flex flex-col items-center justify-center space-y-2">
                       {balanceFile ? (
                         <>
@@ -310,7 +317,10 @@ export default function Layout({ children }: LayoutProps) {
                           <button
                             type="button"
                             className="text-xs text-darkGreen hover:text-lightGreen"
-                            onClick={() => setBalanceFile(null)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setBalanceFile(null);
+                            }}
                           >
                             Dosyayı Değiştir
                           </button>
@@ -359,7 +369,7 @@ export default function Layout({ children }: LayoutProps) {
                   <button
                     type="submit"
                     className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkGreen hover:bg-lightGreen focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkGreen transition-colors"
-                    disabled={isSubmitting || !balanceFile}
+                    disabled={isSubmitting}
                   >
                     {isSubmitting ? (
                       <>

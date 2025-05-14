@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Save, Eye, Plus, Check, Trash } from 'lucide-react';
+import { Save, Eye, Plus, Check, Trash, RefreshCcw, Layout as LayoutIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import BarkodPreview from '../../components/user/BarkodPreview';
 import { useAuth } from '../../lib/auth';
@@ -85,6 +85,7 @@ export default function BarkodTasarimi() {
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [showNewTasarimInput, setShowNewTasarimInput] = useState(false);
   const [newTasarimName, setNewTasarimName] = useState('');
+  const [activeTab, setActiveTab] = useState<'genel' | 'icerik' | 'gorunum'>('genel');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -489,37 +490,49 @@ export default function BarkodTasarimi() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-4 px-4">
-        <div className="flex flex-col mb-6">
-          <div className="flex flex-wrap items-center mb-4 gap-2">
-            <h1 className="text-2xl font-bold">Barkod Tasarım Ayarlarım</h1>
-            
-            <div className="ml-auto flex items-center gap-2">
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center gap-2"
-              >
-                <Save className="w-4 h-4" /> Kaydet
-              </button>
-              <button
-                onClick={() => setPreviewMode(!previewMode)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center gap-2"
-              >
-                <Eye className="w-4 h-4" /> {previewMode ? 'Düzenleme Modu' : 'Önizleme Modu'}
-              </button>
+      <div className="container mx-auto py-6 px-4 max-w-7xl">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+          {/* Header */}
+          <div className="border-b border-gray-100 p-5">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <LayoutIcon className="w-5 h-5 text-lightGreen" />
+                <h1 className="text-xl font-semibold text-gray-800">Barkod Tasarım Ayarlarım</h1>
+              </div>
+              
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => fetchTasarimlar()}
+                  className="px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-md flex items-center gap-2 text-sm transition-colors"
+                >
+                  <RefreshCcw className="w-4 h-4" /> Yenile
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="px-4 py-2 bg-darkGreen hover:bg-lightGreen text-white rounded-md flex items-center gap-2 text-sm transition-colors"
+                >
+                  <Save className="w-4 h-4" /> Kaydet
+                </button>
+                <button
+                  onClick={() => setPreviewMode(!previewMode)}
+                  className={`px-4 py-2 ${previewMode ? 'bg-gray-700' : 'bg-lightGreen hover:bg-darkGreen'} text-white rounded-md flex items-center gap-2 text-sm transition-colors`}
+                >
+                  <Eye className="w-4 h-4" /> {previewMode ? 'Düzenleme Modu' : 'Önizleme Modu'}
+                </button>
+              </div>
             </div>
           </div>
           
           {/* Tasarım seçimi ve yönetimi */}
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
+          <div className="bg-gray-50 p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tasarım Seçin</label>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-600 mb-1.5">Tasarım Seçin</label>
                 <select 
                   value={currentTasarim.id || ''}
                   onChange={(e) => handleTasarimChange(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md bg-white"
+                  className="w-full p-2.5 border border-gray-300 rounded-md bg-white text-gray-700 shadow-sm focus:ring-2 focus:ring-lightGreen focus:border-lightGreen transition-all outline-none"
                   disabled={loading}
                 >
                   {tasarimListesi.map((tasarim) => (
@@ -534,7 +547,7 @@ export default function BarkodTasarimi() {
                 {!showNewTasarimInput ? (
                   <button
                     onClick={() => setShowNewTasarimInput(true)}
-                    className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center gap-2"
+                    className="h-10 px-4 bg-gradient-to-r from-darkGreen to-lightGreen hover:from-lightGreen hover:to-darkGreen text-white rounded-md flex items-center gap-2 shadow-sm transition-all"
                     disabled={loading}
                   >
                     <Plus className="w-4 h-4" /> Yeni Tasarım
@@ -542,20 +555,20 @@ export default function BarkodTasarimi() {
                 ) : (
                   <div className="flex w-full items-center gap-2">
                     <div className="flex-grow">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Yeni Tasarım Adı</label>
+                      <label className="block text-sm font-medium text-gray-600 mb-1.5">Yeni Tasarım Adı</label>
                       <input
                         type="text"
                         value={newTasarimName}
                         onChange={(e) => setNewTasarimName(e.target.value)}
                         placeholder="Tasarım adı"
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-lightGreen focus:border-lightGreen transition-all outline-none"
                         disabled={loading}
                       />
                     </div>
-                    <div className="flex items-end gap-2">
+                    <div className="flex items-end gap-2 h-10">
                       <button
                         onClick={handleCreateNewTasarim}
-                        className="h-10 px-3 bg-green-600 hover:bg-green-700 text-white rounded-md"
+                        className="h-10 px-3 bg-darkGreen hover:bg-lightGreen text-white rounded-md flex items-center justify-center shadow-sm transition-colors"
                         disabled={loading || !newTasarimName.trim()}
                       >
                         <Check className="w-4 h-4" />
@@ -565,7 +578,7 @@ export default function BarkodTasarimi() {
                           setShowNewTasarimInput(false);
                           setNewTasarimName('');
                         }}
-                        className="h-10 px-3 bg-gray-600 hover:bg-gray-700 text-white rounded-md"
+                        className="h-10 px-3 bg-gray-500 hover:bg-gray-600 text-white rounded-md flex items-center justify-center shadow-sm transition-colors"
                         disabled={loading}
                       >
                         <Trash className="w-4 h-4" />
@@ -579,7 +592,7 @@ export default function BarkodTasarimi() {
                 {currentTasarim.id && !currentTasarim.is_default && (
                   <button
                     onClick={() => currentTasarim.id && setDefaultTasarim(currentTasarim.id)}
-                    className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center gap-2"
+                    className="h-10 px-4 bg-lightGreen hover:bg-darkGreen text-white rounded-md flex items-center gap-2 shadow-sm transition-colors"
                     disabled={loading}
                   >
                     <Check className="w-4 h-4" /> Varsayılan Yap
@@ -589,7 +602,7 @@ export default function BarkodTasarimi() {
                 {currentTasarim.id && !currentTasarim.is_default && tasarimListesi.length > 1 && (
                   <button
                     onClick={() => currentTasarim.id && deleteTasarim(currentTasarim.id)}
-                    className="h-10 px-4 bg-red-600 hover:bg-red-700 text-white rounded-md flex items-center gap-2"
+                    className="h-10 px-4 bg-red-600 hover:bg-red-700 text-white rounded-md flex items-center gap-2 shadow-sm transition-colors"
                     disabled={loading}
                   >
                     <Trash className="w-4 h-4" /> Sil
@@ -598,388 +611,532 @@ export default function BarkodTasarimi() {
               </div>
             </div>
           </div>
-        </div>
-        
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Sol Panel - Ayarlar */}
-          <div className={`w-full lg:w-1/2 bg-white p-5 rounded-lg shadow-sm border border-gray-200 ${previewMode ? 'hidden lg:block' : ''}`}>
-            <div className="space-y-6">
-              <div className="border-b pb-4">
-                <label className="block text-gray-700 text-sm font-medium mb-2">Tasarım Adı</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={currentTasarim.name}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  placeholder="Tasarım adı girin"
-                />
-              </div>
-              
-              <div className="border-b pb-4">
-                <h3 className="font-medium text-gray-900 mb-3">Görünüm Ayarları</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Logo Konumu</label>
-                    <select
-                      name="logoPosition"
-                      value={currentTasarim.config.logoPosition}
-                      onChange={handleConfigChange}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="left">Sol</option>
-                      <option value="center">Orta</option>
-                      <option value="right">Sağ</option>
-                      <option value="none">Gösterme</option>
-                    </select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Yazı Tipi</label>
-                    <select
-                      name="fontFamily"
-                      value={currentTasarim.config.fontFamily}
-                      onChange={handleConfigChange}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="Arial">Arial</option>
-                      <option value="Helvetica">Helvetica</option>
-                      <option value="Times New Roman">Times New Roman</option>
-                      <option value="Courier New">Courier New</option>
-                      <option value="Verdana">Verdana</option>
-                      <option value="Tahoma">Tahoma</option>
-                    </select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Yazı Boyutu</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        name="fontSize"
-                        value={currentTasarim.config.fontSize}
-                        onChange={handleConfigChange}
-                        min="8"
-                        max="16"
-                        className="w-full"
-                      />
-                      <span>{currentTasarim.config.fontSize}px</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Başlık Rengi</label>
-                    <input
-                      type="color"
-                      name="headerColor"
-                      value={currentTasarim.config.headerColor}
-                      onChange={handleConfigChange}
-                      className="w-full p-1 border border-gray-300 rounded-md h-10"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Metin Rengi</label>
-                    <input
-                      type="color"
-                      name="textColor"
-                      value={currentTasarim.config.textColor}
-                      onChange={handleConfigChange}
-                      className="w-full p-1 border border-gray-300 rounded-md h-10"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Kenarlık Rengi</label>
-                    <input
-                      type="color"
-                      name="borderColor"
-                      value={currentTasarim.config.borderColor}
-                      onChange={handleConfigChange}
-                      className="w-full p-1 border border-gray-300 rounded-md h-10"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Arkaplan Rengi</label>
-                    <input
-                      type="color"
-                      name="backgroundColor"
-                      value={currentTasarim.config.backgroundColor}
-                      onChange={handleConfigChange}
-                      className="w-full p-1 border border-gray-300 rounded-md h-10"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Logo Yükle</label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="file"
-                        onChange={handleLogoUpload}
-                        accept="image/*"
-                        className="block w-full text-sm text-gray-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-md file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-blue-500 file:text-white
-                        hover:file:bg-blue-600"
-                      />
-                    </div>
-                    {(logoPreview || currentTasarim.config.logoUrl) && (
-                      <div className="mt-2">
-                        <img 
-                          src={logoPreview || currentTasarim.config.logoUrl} 
-                          alt="Logo önizleme" 
-                          className="max-h-20" 
-                        />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Logo Genişliği</label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="range"
-                        name="logoWidth"
-                        value={currentTasarim.config.logoWidth}
-                        onChange={handleConfigChange}
-                        min="50"
-                        max="200"
-                        className="w-full"
-                      />
-                      <span>{currentTasarim.config.logoWidth}px</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Logo Yüksekliği</label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="range"
-                        name="logoHeight"
-                        value={currentTasarim.config.logoHeight}
-                        onChange={handleConfigChange}
-                        min="30"
-                        max="150"
-                        className="w-full"
-                      />
-                      <span>{currentTasarim.config.logoHeight}px</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Barkod Genişliği</label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="range"
-                        name="barcodeWidth"
-                        value={currentTasarim.config.barcodeWidth}
-                        onChange={handleConfigChange}
-                        min="100"
-                        max="300"
-                        className="w-full"
-                      />
-                      <span>{currentTasarim.config.barcodeWidth}px</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Barkod Yüksekliği</label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="range"
-                        name="barcodeHeight"
-                        value={currentTasarim.config.barcodeHeight}
-                        onChange={handleConfigChange}
-                        min="20"
-                        max="80"
-                        className="w-full"
-                      />
-                      <span>{currentTasarim.config.barcodeHeight}px</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Etiket Genişliği</label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="range"
-                        name="width"
-                        value={currentTasarim.config.width}
-                        onChange={handleConfigChange}
-                        min="300"
-                        max="800"
-                        className="w-full"
-                      />
-                      <span>{currentTasarim.config.width}px</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Etiket Yüksekliği</label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="range"
-                        name="height"
-                        value={currentTasarim.config.height}
-                        onChange={handleConfigChange}
-                        min="300"
-                        max="800"
-                        className="w-full"
-                      />
-                      <span>{currentTasarim.config.height}px</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2 col-span-2">
-                    <label className="block text-gray-700 text-sm font-medium">Footer Metni</label>
-                    <input
-                      type="text"
-                      name="footerText"
-                      value={currentTasarim.config.footerText}
-                      onChange={handleConfigChange}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-gray-700 text-sm font-medium">Footer Rengi</label>
-                    <input
-                      type="color"
-                      name="footerColor"
-                      value={currentTasarim.config.footerColor}
-                      onChange={handleConfigChange}
-                      className="w-full p-1 border border-gray-300 rounded-md h-10"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border-b pb-4">
-                <h3 className="font-medium text-gray-900 mb-3">İçerik Ayarları</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="showLogo"
-                      checked={currentTasarim.config.showLogo}
-                      onChange={handleConfigChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label className="text-sm text-gray-600">Logo Göster</label>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="showBarcodeText"
-                      checked={currentTasarim.config.showBarcodeText}
-                      onChange={handleConfigChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label className="text-sm text-gray-600">Barkod Metnini Göster</label>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="showGonderiTipi"
-                      checked={currentTasarim.config.showGonderiTipi}
-                      onChange={handleConfigChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label className="text-sm text-gray-600">Gönderi Tipi</label>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="showOdemeTipi"
-                      checked={currentTasarim.config.showOdemeTipi}
-                      onChange={handleConfigChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label className="text-sm text-gray-600">Ödeme Tipi</label>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="showGonderen"
-                      checked={currentTasarim.config.showGonderen}
-                      onChange={handleConfigChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label className="text-sm text-gray-600">Gönderen Bilgisi</label>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="showAlici"
-                      checked={currentTasarim.config.showAlici}
-                      onChange={handleConfigChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label className="text-sm text-gray-600">Alıcı Bilgisi</label>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="showUrunler"
-                      checked={currentTasarim.config.showUrunler}
-                      onChange={handleConfigChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label className="text-sm text-gray-600">Ürün İçerikleri</label>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="showKgDesi"
-                      checked={currentTasarim.config.showKgDesi}
-                      onChange={handleConfigChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label className="text-sm text-gray-600">KG/Desi Bilgisi</label>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="showPaketBilgisi"
-                      checked={currentTasarim.config.showPaketBilgisi}
-                      onChange={handleConfigChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label className="text-sm text-gray-600">Paket Bilgisi</label>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="showAnlasmaTuru"
-                      checked={currentTasarim.config.showAnlasmaTuru}
-                      onChange={handleConfigChange}
-                      className="mr-2 h-4 w-4"
-                    />
-                    <label className="text-sm text-gray-600">Anlaşma Türü</label>
-                  </div>
-                </div>
+
+          {/* Navigation Tabs */}
+          {!previewMode && (
+            <div className="border-b border-gray-200">
+              <div className="flex">
+                <button
+                  onClick={() => setActiveTab('genel')}
+                  className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+                    activeTab === 'genel' 
+                      ? 'border-lightGreen text-darkGreen' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Genel Ayarlar
+                </button>
+                <button
+                  onClick={() => setActiveTab('gorunum')}
+                  className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+                    activeTab === 'gorunum' 
+                      ? 'border-lightGreen text-darkGreen' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Görünüm
+                </button>
+                <button
+                  onClick={() => setActiveTab('icerik')}
+                  className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+                    activeTab === 'icerik' 
+                      ? 'border-lightGreen text-darkGreen' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  İçerik Seçenekleri
+                </button>
               </div>
             </div>
-          </div>
-          
-          {/* Sağ Panel - Önizleme */}
-          <div className={`w-full ${previewMode ? 'lg:w-full' : 'lg:w-1/2'}`}>
-            <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200 h-full">
-              <h3 className="text-lg font-medium mb-4 text-center">Barkod Önizleme</h3>
-              <div className="overflow-auto flex justify-center" style={{ maxHeight: '700px' }}>
-                <BarkodPreview config={currentTasarim.config} />
+          )}
+
+          {/* Main Content Area */}
+          <div className="flex flex-col lg:flex-row">
+            {/* Settings Panel */}
+            {!previewMode && (
+              <div className="w-full lg:w-1/2 border-r border-gray-100">
+                {activeTab === 'genel' && (
+                  <div className="p-6 space-y-5">
+                    <div className="space-y-4">
+                      <h3 className="text-base font-medium text-darkGreen">Temel Bilgiler</h3>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1.5">Tasarım Adı</label>
+                          <input
+                            type="text"
+                            name="name"
+                            value={currentTasarim.name}
+                            onChange={handleInputChange}
+                            className="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-lightGreen focus:border-lightGreen transition-all outline-none"
+                            placeholder="Tasarım adı girin"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1.5">Footer Metni</label>
+                          <input
+                            type="text"
+                            name="footerText"
+                            value={currentTasarim.config.footerText}
+                            onChange={handleConfigChange}
+                            className="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-lightGreen focus:border-lightGreen transition-all outline-none"
+                            placeholder="Alt bilgi metni girin"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4 pt-4 border-t border-gray-100">
+                      <h3 className="text-base font-medium text-darkGreen">Logo Ayarları</h3>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1.5">Logo Yükle</label>
+                          <div className="flex flex-col gap-3">
+                            <input
+                              type="file"
+                              onChange={handleLogoUpload}
+                              accept="image/*"
+                              className="block w-full text-sm text-gray-500
+                              file:mr-4 file:py-2.5 file:px-4
+                              file:rounded-md file:border-0
+                              file:text-sm file:font-medium
+                              file:bg-lightGreen file:text-white
+                              hover:file:bg-darkGreen 
+                              cursor-pointer focus:outline-none"
+                            />
+                            
+                            {(logoPreview || currentTasarim.config.logoUrl) && (
+                              <div className="flex items-center justify-center p-3 border border-gray-200 rounded-md bg-gray-50">
+                                <img 
+                                  src={logoPreview || currentTasarim.config.logoUrl} 
+                                  alt="Logo önizleme" 
+                                  className="max-h-24 max-w-full" 
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1.5">Logo Konumu</label>
+                          <select
+                            name="logoPosition"
+                            value={currentTasarim.config.logoPosition}
+                            onChange={handleConfigChange}
+                            className="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-lightGreen focus:border-lightGreen transition-all outline-none"
+                          >
+                            <option value="left">Sol</option>
+                            <option value="center">Orta</option>
+                            <option value="right">Sağ</option>
+                            <option value="none">Gösterme</option>
+                          </select>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                              Logo Genişliği: <span className="text-darkGreen">{currentTasarim.config.logoWidth}px</span>
+                            </label>
+                            <input
+                              type="range"
+                              name="logoWidth"
+                              value={currentTasarim.config.logoWidth}
+                              onChange={handleConfigChange}
+                              min="50"
+                              max="200"
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-lightGreen"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                              Logo Yüksekliği: <span className="text-darkGreen">{currentTasarim.config.logoHeight}px</span>
+                            </label>
+                            <input
+                              type="range"
+                              name="logoHeight"
+                              value={currentTasarim.config.logoHeight}
+                              onChange={handleConfigChange}
+                              min="30"
+                              max="150"
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-lightGreen"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4 pt-4 border-t border-gray-100">
+                      <h3 className="text-base font-medium text-darkGreen">Boyut Ayarları</h3>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                            Etiket Genişliği: <span className="text-darkGreen">{currentTasarim.config.width}px</span>
+                          </label>
+                          <input
+                            type="range"
+                            name="width"
+                            value={currentTasarim.config.width}
+                            onChange={handleConfigChange}
+                            min="300"
+                            max="800"
+                            step="10"
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-lightGreen"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                            Etiket Yüksekliği: <span className="text-darkGreen">{currentTasarim.config.height}px</span>
+                          </label>
+                          <input
+                            type="range"
+                            name="height"
+                            value={currentTasarim.config.height}
+                            onChange={handleConfigChange}
+                            min="300"
+                            max="800"
+                            step="10"
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-lightGreen"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                            Barkod Genişliği: <span className="text-darkGreen">{currentTasarim.config.barcodeWidth}px</span>
+                          </label>
+                          <input
+                            type="range"
+                            name="barcodeWidth"
+                            value={currentTasarim.config.barcodeWidth}
+                            onChange={handleConfigChange}
+                            min="100"
+                            max="300"
+                            step="5"
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-lightGreen"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                            Barkod Yüksekliği: <span className="text-darkGreen">{currentTasarim.config.barcodeHeight}px</span>
+                          </label>
+                          <input
+                            type="range"
+                            name="barcodeHeight"
+                            value={currentTasarim.config.barcodeHeight}
+                            onChange={handleConfigChange}
+                            min="20"
+                            max="80"
+                            step="2"
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-lightGreen"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {activeTab === 'gorunum' && (
+                  <div className="p-6 space-y-5">
+                    <div className="space-y-4">
+                      <h3 className="text-base font-medium text-darkGreen">Yazı ve Font Ayarları</h3>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1.5">Yazı Tipi</label>
+                          <select
+                            name="fontFamily"
+                            value={currentTasarim.config.fontFamily}
+                            onChange={handleConfigChange}
+                            className="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-lightGreen focus:border-lightGreen transition-all outline-none"
+                          >
+                            <option value="Arial">Arial</option>
+                            <option value="Helvetica">Helvetica</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Courier New">Courier New</option>
+                            <option value="Verdana">Verdana</option>
+                            <option value="Tahoma">Tahoma</option>
+                          </select>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                            Yazı Boyutu: <span className="text-darkGreen">{currentTasarim.config.fontSize}px</span>
+                          </label>
+                          <input
+                            type="range"
+                            name="fontSize"
+                            value={currentTasarim.config.fontSize}
+                            onChange={handleConfigChange}
+                            min="8"
+                            max="16"
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-lightGreen"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4 pt-4 border-t border-gray-100">
+                      <h3 className="text-base font-medium text-darkGreen mb-2">Renk Ayarları</h3>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="bg-white p-2.5 rounded-lg shadow-sm border border-gray-100 hover:border-lightGreen transition-all">
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">Başlık Rengi</label>
+                          <div className="flex items-center">
+                            <div className="relative">
+                              <input
+                                type="color"
+                                name="headerColor"
+                                value={currentTasarim.config.headerColor}
+                                onChange={handleConfigChange}
+                                className="w-10 h-8 p-0.5 border border-gray-300 rounded-l-md cursor-pointer"
+                              />
+                              <div className="absolute inset-0 opacity-0 hover:opacity-10 bg-black rounded-l-md transition-opacity"></div>
+                            </div>
+                            <input 
+                              type="text" 
+                              value={currentTasarim.config.headerColor} 
+                              onChange={(e) => handleConfigChange({
+                                target: { name: 'headerColor', value: e.target.value, type: 'text' }
+                              } as React.ChangeEvent<HTMLInputElement>)}
+                              className="flex-1 py-1.5 px-2 text-sm border border-l-0 border-gray-300 rounded-r-md focus:ring-2 focus:ring-lightGreen focus:border-lightGreen transition-all outline-none truncate"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white p-2.5 rounded-lg shadow-sm border border-gray-100 hover:border-lightGreen transition-all">
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">Metin Rengi</label>
+                          <div className="flex items-center">
+                            <div className="relative">
+                              <input
+                                type="color"
+                                name="textColor"
+                                value={currentTasarim.config.textColor}
+                                onChange={handleConfigChange}
+                                className="w-10 h-8 p-0.5 border border-gray-300 rounded-l-md cursor-pointer"
+                              />
+                              <div className="absolute inset-0 opacity-0 hover:opacity-10 bg-black rounded-l-md transition-opacity"></div>
+                            </div>
+                            <input 
+                              type="text" 
+                              value={currentTasarim.config.textColor} 
+                              onChange={(e) => handleConfigChange({
+                                target: { name: 'textColor', value: e.target.value, type: 'text' }
+                              } as React.ChangeEvent<HTMLInputElement>)}
+                              className="flex-1 py-1.5 px-2 text-sm border border-l-0 border-gray-300 rounded-r-md focus:ring-2 focus:ring-lightGreen focus:border-lightGreen transition-all outline-none truncate"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white p-2.5 rounded-lg shadow-sm border border-gray-100 hover:border-lightGreen transition-all">
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">Kenarlık Rengi</label>
+                          <div className="flex items-center">
+                            <div className="relative">
+                              <input
+                                type="color"
+                                name="borderColor"
+                                value={currentTasarim.config.borderColor}
+                                onChange={handleConfigChange}
+                                className="w-10 h-8 p-0.5 border border-gray-300 rounded-l-md cursor-pointer"
+                              />
+                              <div className="absolute inset-0 opacity-0 hover:opacity-10 bg-black rounded-l-md transition-opacity"></div>
+                            </div>
+                            <input 
+                              type="text" 
+                              value={currentTasarim.config.borderColor} 
+                              onChange={(e) => handleConfigChange({
+                                target: { name: 'borderColor', value: e.target.value, type: 'text' }
+                              } as React.ChangeEvent<HTMLInputElement>)}
+                              className="flex-1 py-1.5 px-2 text-sm border border-l-0 border-gray-300 rounded-r-md focus:ring-2 focus:ring-lightGreen focus:border-lightGreen transition-all outline-none truncate"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white p-2.5 rounded-lg shadow-sm border border-gray-100 hover:border-lightGreen transition-all">
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">Arkaplan Rengi</label>
+                          <div className="flex items-center">
+                            <div className="relative">
+                              <input
+                                type="color"
+                                name="backgroundColor"
+                                value={currentTasarim.config.backgroundColor}
+                                onChange={handleConfigChange}
+                                className="w-10 h-8 p-0.5 border border-gray-300 rounded-l-md cursor-pointer"
+                              />
+                              <div className="absolute inset-0 opacity-0 hover:opacity-10 bg-black rounded-l-md transition-opacity"></div>
+                            </div>
+                            <input 
+                              type="text" 
+                              value={currentTasarim.config.backgroundColor} 
+                              onChange={(e) => handleConfigChange({
+                                target: { name: 'backgroundColor', value: e.target.value, type: 'text' }
+                              } as React.ChangeEvent<HTMLInputElement>)}
+                              className="flex-1 py-1.5 px-2 text-sm border border-l-0 border-gray-300 rounded-r-md focus:ring-2 focus:ring-lightGreen focus:border-lightGreen transition-all outline-none truncate"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white p-2.5 rounded-lg shadow-sm border border-gray-100 hover:border-lightGreen transition-all">
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">Footer Rengi</label>
+                          <div className="flex items-center">
+                            <div className="relative">
+                              <input
+                                type="color"
+                                name="footerColor"
+                                value={currentTasarim.config.footerColor}
+                                onChange={handleConfigChange}
+                                className="w-10 h-8 p-0.5 border border-gray-300 rounded-l-md cursor-pointer"
+                              />
+                              <div className="absolute inset-0 opacity-0 hover:opacity-10 bg-black rounded-l-md transition-opacity"></div>
+                            </div>
+                            <input 
+                              type="text" 
+                              value={currentTasarim.config.footerColor} 
+                              onChange={(e) => handleConfigChange({
+                                target: { name: 'footerColor', value: e.target.value, type: 'text' }
+                              } as React.ChangeEvent<HTMLInputElement>)}
+                              className="flex-1 py-1.5 px-2 text-sm border border-l-0 border-gray-300 rounded-r-md focus:ring-2 focus:ring-lightGreen focus:border-lightGreen transition-all outline-none truncate"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {activeTab === 'icerik' && (
+                  <div className="p-6">
+                    <h3 className="text-base font-medium text-darkGreen mb-4">Görüntülenecek Bilgiler</h3>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-lightGreen cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          name="showLogo"
+                          checked={currentTasarim.config.showLogo}
+                          onChange={handleConfigChange}
+                          className="h-4 w-4 text-lightGreen border-gray-300 rounded focus:ring-lightGreen"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Logo</span>
+                      </label>
+                      
+                      <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-lightGreen cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          name="showBarcodeText"
+                          checked={currentTasarim.config.showBarcodeText}
+                          onChange={handleConfigChange}
+                          className="h-4 w-4 text-lightGreen border-gray-300 rounded focus:ring-lightGreen"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Barkod Metni</span>
+                      </label>
+                      
+                      <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-lightGreen cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          name="showGonderiTipi"
+                          checked={currentTasarim.config.showGonderiTipi}
+                          onChange={handleConfigChange}
+                          className="h-4 w-4 text-lightGreen border-gray-300 rounded focus:ring-lightGreen"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Gönderi Tipi</span>
+                      </label>
+                      
+                      <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-lightGreen cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          name="showOdemeTipi"
+                          checked={currentTasarim.config.showOdemeTipi}
+                          onChange={handleConfigChange}
+                          className="h-4 w-4 text-lightGreen border-gray-300 rounded focus:ring-lightGreen"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Ödeme Tipi</span>
+                      </label>
+                      
+                      <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-lightGreen cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          name="showGonderen"
+                          checked={currentTasarim.config.showGonderen}
+                          onChange={handleConfigChange}
+                          className="h-4 w-4 text-lightGreen border-gray-300 rounded focus:ring-lightGreen"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Gönderen Bilgisi</span>
+                      </label>
+                      
+                      <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-lightGreen cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          name="showAlici"
+                          checked={currentTasarim.config.showAlici}
+                          onChange={handleConfigChange}
+                          className="h-4 w-4 text-lightGreen border-gray-300 rounded focus:ring-lightGreen"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Alıcı Bilgisi</span>
+                      </label>
+                      
+                      <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-lightGreen cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          name="showUrunler"
+                          checked={currentTasarim.config.showUrunler}
+                          onChange={handleConfigChange}
+                          className="h-4 w-4 text-lightGreen border-gray-300 rounded focus:ring-lightGreen"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Ürün İçerikleri</span>
+                      </label>
+                      
+                      <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-lightGreen cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          name="showKgDesi"
+                          checked={currentTasarim.config.showKgDesi}
+                          onChange={handleConfigChange}
+                          className="h-4 w-4 text-lightGreen border-gray-300 rounded focus:ring-lightGreen"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">KG/Desi Bilgisi</span>
+                      </label>
+                      
+                      <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-lightGreen cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          name="showPaketBilgisi"
+                          checked={currentTasarim.config.showPaketBilgisi}
+                          onChange={handleConfigChange}
+                          className="h-4 w-4 text-lightGreen border-gray-300 rounded focus:ring-lightGreen"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Paket Bilgisi</span>
+                      </label>
+                      
+                      <label className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-lightGreen cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          name="showAnlasmaTuru"
+                          checked={currentTasarim.config.showAnlasmaTuru}
+                          onChange={handleConfigChange}
+                          className="h-4 w-4 text-lightGreen border-gray-300 rounded focus:ring-lightGreen"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Anlaşma Türü</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Preview Panel */}
+            <div className={`w-full ${previewMode ? 'lg:w-full' : 'lg:w-1/2'} p-6`}>
+              <div className="rounded-md border border-gray-200 bg-white shadow-sm h-full p-6">
+                <h3 className="text-lg font-medium mb-6 text-center text-darkGreen">Barkod Önizleme</h3>
+                <div className="overflow-auto flex justify-center items-center" style={{ maxHeight: '700px' }}>
+                  <BarkodPreview config={currentTasarim.config} />
+                </div>
               </div>
             </div>
           </div>

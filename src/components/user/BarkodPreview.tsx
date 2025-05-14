@@ -81,7 +81,7 @@ export default function BarkodPreview({ config }: BarkodPreviewProps) {
     border: `1px solid ${config.borderColor}`,
     backgroundColor: config.backgroundColor,
     color: config.textColor,
-    padding: '10px',
+    padding: '12px',
     width: `${config.width}px`,
     minHeight: `${config.height}px`,
     position: 'relative',
@@ -90,17 +90,22 @@ export default function BarkodPreview({ config }: BarkodPreviewProps) {
     margin: '0 auto',
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
+    borderRadius: '6px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+    transition: 'all 0.3s ease'
   };
   
   const headerStyle: React.CSSProperties = {
     color: config.headerColor,
     fontWeight: 'bold',
-    marginBottom: '8px'
+    marginBottom: '6px',
+    fontSize: `${config.fontSize + 1}px`,
+    letterSpacing: '0.2px'
   };
   
   const sectionStyle: React.CSSProperties = {
     borderBottom: `1px solid ${config.borderColor}`,
-    padding: '8px 0',
+    padding: '10px 0',
     display: 'flex'
   };
   
@@ -129,39 +134,58 @@ export default function BarkodPreview({ config }: BarkodPreviewProps) {
       textAlign: logoAlign as 'left' | 'center' | 'right',
       marginBottom: '15px',
       minHeight: '50px',
-      width: '50%'
+      width: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: config.logoPosition === 'center' ? 'center' : 
+                     config.logoPosition === 'right' ? 'flex-end' : 'flex-start'
     };
   };
   
   const logoImageStyle: React.CSSProperties = {
     width: `${config.logoWidth}px`,
     height: `${config.logoHeight}px`,
-    objectFit: 'contain'
+    objectFit: 'contain',
+    filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
   };
   
   const footerStyle: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
-    marginTop: '8px',
+    marginTop: '10px',
     borderTop: `1px solid ${config.borderColor}`,
-    paddingTop: '8px',
+    paddingTop: '10px',
     fontSize: config.fontSize - 1
   };
   
   // Barkod render etme fonksiyonu
   const renderBarcode = () => {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '50%' }}>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'flex-end', 
+        width: '50%',
+        justifyContent: 'center'
+      }}>
         <div style={{ 
           height: `${config.barcodeHeight}px`,
           width: `${config.barcodeWidth}px`,
           textAlign: 'center',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          position: 'relative'
         }}>
           <svg ref={barcodeRef} style={{ maxWidth: '100%', maxHeight: '100%' }}></svg>
         </div>
         {config.showBarcodeText && (
-          <div className="text-right mt-1" style={{ fontSize: config.fontSize - 2, letterSpacing: '1px' }}>
+          <div style={{ 
+            fontSize: config.fontSize - 2, 
+            letterSpacing: '1px',
+            marginTop: '3px',
+            textAlign: 'center',
+            width: '100%',
+            color: `${config.textColor}B3`
+          }}>
             {mockData.referansNo}
           </div>
         )}
@@ -171,7 +195,12 @@ export default function BarkodPreview({ config }: BarkodPreviewProps) {
   
   return (
     <div style={containerStyle} className="barkod-preview">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '10px'
+      }}>
         {config.showLogo && config.logoPosition !== 'none' && config.logoUrl ? (
           <div style={getLogoContainerStyle()} className="logo">
             <img 
@@ -181,7 +210,7 @@ export default function BarkodPreview({ config }: BarkodPreviewProps) {
             />
           </div>
         ) : (
-          <div style={{ ...getLogoContainerStyle(), display: 'flex', alignItems: 'center' }}>
+          <div style={getLogoContainerStyle()}>
             {config.showLogo && config.logoPosition !== 'none' && (
               <div style={{ 
                 width: `${config.logoWidth}px`, 
@@ -192,8 +221,8 @@ export default function BarkodPreview({ config }: BarkodPreviewProps) {
                 justifyContent: 'center',
                 fontSize: '12px',
                 color: '#888',
-                margin: config.logoPosition === 'center' ? '0 auto' : 
-                       config.logoPosition === 'right' ? '0 0 0 auto' : '0'
+                borderRadius: '4px',
+                backgroundColor: 'rgba(0,0,0,0.02)'
               }}>
                 Logo Alanı
               </div>
@@ -205,7 +234,11 @@ export default function BarkodPreview({ config }: BarkodPreviewProps) {
       </div>
       
       {(config.showGonderiTipi || config.showOdemeTipi) && (
-        <div style={sectionStyle}>
+        <div style={{
+          ...sectionStyle,
+          borderRadius: '5px',
+          backgroundColor: 'rgba(0,0,0,0.01)'
+        }}>
           {config.showGonderiTipi && (
             <div style={leftColumnStyle}>
               <div style={headerStyle}>GÖNDERİ TİPİ:</div>
@@ -217,7 +250,13 @@ export default function BarkodPreview({ config }: BarkodPreviewProps) {
             <div style={rightColumnStyle}>
               <div style={headerStyle}>ÖDEME TİPİ:</div>
               <div>{mockData.odemeTipi}</div>
-              <div style={{ fontSize: config.fontSize - 2, marginTop: '5px' }}>SİPARİŞ TARİHİ: {mockData.siparisTarihi}</div>
+              <div style={{ 
+                fontSize: config.fontSize - 2, 
+                marginTop: '5px',
+                opacity: 0.8 
+              }}>
+                SİPARİŞ TARİHİ: {mockData.siparisTarihi}
+              </div>
             </div>
           )}
         </div>
@@ -228,30 +267,35 @@ export default function BarkodPreview({ config }: BarkodPreviewProps) {
           {config.showGonderen && (
             <div style={leftColumnStyle}>
               <div style={headerStyle}>GÖNDEREN:</div>
-              <div>{mockData.gonderen}</div>
+              <div style={{ fontWeight: 'medium' }}>{mockData.gonderen}</div>
             </div>
           )}
           
           {config.showAlici && (
             <div style={rightColumnStyle}>
               <div style={headerStyle}>ALICI:</div>
-              <div>{mockData.alici.name}</div>
-              <div>{mockData.alici.address}</div>
-              <div>{mockData.alici.district} - {mockData.alici.city}</div>
-              <div>{mockData.alici.phone}</div>
+              <div style={{ fontWeight: 'medium' }}>{mockData.alici.name}</div>
+              <div style={{ fontSize: config.fontSize - 1 }}>{mockData.alici.address}</div>
+              <div style={{ fontSize: config.fontSize - 1 }}>{mockData.alici.district} - {mockData.alici.city}</div>
+              <div style={{ fontSize: config.fontSize - 1 }}>{mockData.alici.phone}</div>
             </div>
           )}
         </div>
       )}
       
       {config.showUrunler && (
-        <div style={sectionStyle}>
+        <div style={{
+          ...sectionStyle,
+          borderRadius: '5px',
+          backgroundColor: 'rgba(0,0,0,0.01)'
+        }}>
           <div style={{ width: '100%' }}>
             <div style={headerStyle}>ÜRÜNLER (1):</div>
             <div>
               {mockData.urunler.map((urun, index) => (
-                <div key={index}>
-                  {urun.name} <span style={{ float: 'right' }}>{urun.quantity} Adet</span>
+                <div key={index} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{urun.name}</span> 
+                  <span>{urun.quantity} Adet</span>
                 </div>
               ))}
             </div>
@@ -260,38 +304,45 @@ export default function BarkodPreview({ config }: BarkodPreviewProps) {
       )}
       
       {(config.showKgDesi || config.showPaketBilgisi || config.showAnlasmaTuru) && (
-        <div style={footerStyle}>
+        <div style={{
+          ...footerStyle,
+          backgroundColor: 'rgba(0,0,0,0.02)',
+          borderRadius: '4px',
+          padding: '8px',
+          alignItems: 'center'
+        }}>
           <div>
-            NO: #13
+            <span style={{ fontWeight: 'bold' }}>NO:</span> #13
           </div>
           
           {config.showKgDesi && (
             <div>
-              KG/DESİ: {mockData.kgDesi}
+              <span style={{ fontWeight: 'bold' }}>KG/DESİ:</span> {mockData.kgDesi}
             </div>
           )}
           
           {config.showPaketBilgisi && (
             <div>
-              PAKET: {mockData.paket}
+              <span style={{ fontWeight: 'bold' }}>PAKET:</span> {mockData.paket}
             </div>
           )}
           
           {config.showAnlasmaTuru && (
             <div>
-              ANLAŞMA: {mockData.anlasmaTuru}
+              <span style={{ fontWeight: 'bold' }}>ANLAŞMA:</span> {mockData.anlasmaTuru}
             </div>
           )}
         </div>
       )}
       
       <div style={{ 
-        marginTop: '10px', 
+        marginTop: '12px', 
         borderTop: `1px solid ${config.borderColor}`,
-        paddingTop: '5px',
+        paddingTop: '8px',
         fontSize: '10px',
         textAlign: 'right',
-        color: config.footerColor
+        color: config.footerColor,
+        fontStyle: 'italic'
       }}>
         {config.footerText}
       </div>

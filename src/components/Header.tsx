@@ -57,8 +57,12 @@ export default function Header({
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center">
-              <div className="text-sm text-gray-600 mr-2">
-                Bakiye: <span className="font-medium text-darkGreen">{balance.toFixed(2)} TL</span>
+              <div 
+                className="text-sm text-gray-600 mr-2 cursor-pointer hover:text-darkGreen transition-colors flex items-center"
+                onClick={openBalanceModal}
+                title="Bakiye Eklemek İçin Tıklayın"
+              >
+                Bakiye: <span className="font-medium text-darkGreen ml-1">{balance.toFixed(2)} TL</span>
               </div>
               <button
                 onClick={openBalanceModal}

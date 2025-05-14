@@ -1,17 +1,12 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import {
   Users,
-  ShoppingBag,
-  Package,
-  Settings,
   BarChart3,
   Home,
   LogOut,
   DollarSign,
   TruckIcon,
-  Barcode,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -42,13 +37,6 @@ const AdminSidebar = ({ pendingBalanceCount }: AdminSidebarProps) => {
             <span>Kullanıcılar</span>
           </Link>
           <Link
-            to="/admin/urunler"
-            className="flex items-center space-x-2 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <Package className="h-5 w-5 text-darkGreen" />
-            <span>Ürünler</span>
-          </Link>
-          <Link
             to="/admin/bakiye-talepleri"
             className="flex items-center space-x-2 p-3 rounded-lg hover:bg-gray-100 transition-colors"
           >
@@ -68,20 +56,6 @@ const AdminSidebar = ({ pendingBalanceCount }: AdminSidebarProps) => {
           >
             <TruckIcon className="h-5 w-5 text-darkGreen" />
             <span>Kargo Fiyatları</span>
-          </Link>
-          <Link
-            to="/admin/barkodayarlari"
-            className="flex items-center space-x-2 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <Barcode className="h-5 w-5 text-darkGreen" />
-            <span>Barkod Ayarları</span>
-          </Link>
-          <Link
-            to="/admin/ayarlar"
-            className="flex items-center space-x-2 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <Settings className="h-5 w-5 text-darkGreen" />
-            <span>Sistem Ayarları</span>
           </Link>
           <div className="flex-grow"></div>
           <Link
@@ -131,17 +105,13 @@ const AdminSidebar = ({ pendingBalanceCount }: AdminSidebarProps) => {
             <TruckIcon className="h-6 w-6 text-darkGreen" />
             <span className="text-xs">Fiyatlar</span>
           </Link>
-          <Link
-            to="/admin/barkodayarlari"
-            className="flex flex-col items-center p-2"
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="flex flex-col items-center p-2 text-red-500"
           >
-            <Barcode className="h-6 w-6 text-darkGreen" />
-            <span className="text-xs">Barkod</span>
-          </Link>
-          <Link to="/admin/ayarlar" className="flex flex-col items-center p-2">
-            <Settings className="h-6 w-6 text-darkGreen" />
-            <span className="text-xs">Ayarlar</span>
-          </Link>
+            <LogOut className="h-6 w-6" />
+            <span className="text-xs">Çıkış</span>
+          </button>
         </div>
       </div>
     </>

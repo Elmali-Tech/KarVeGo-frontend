@@ -28,7 +28,6 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UsersList from "./pages/admin/UsersList";
 import BalanceRequests from "./pages/admin/BalanceRequests";
 import CarrierPriceManager from "./pages/admin/CarrierPriceManager";
-import BarkodAyarlari from './pages/admin/BarkodAyarlari';
 import BarkodTasarimi from './pages/ayarlar/BarkodTasarimi';
 
 function AuthWrapper() {
@@ -180,14 +179,7 @@ function App() {
                 </div>
               }
             />
-            <Route
-              path="urunler"
-              element={
-                <div className="p-6">
-                  <h1 className="text-2xl font-semibold">Ürün Yönetimi</h1>
-                </div>
-              }
-            />
+
             <Route
               path="ayarlar"
               element={
@@ -196,7 +188,6 @@ function App() {
                 </div>
               }
             />
-            <Route path="barkodayarlari" element={<BarkodAyarlari />} />
           </Route>
         </Routes>
       </AuthProvider>

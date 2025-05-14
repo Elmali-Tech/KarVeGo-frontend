@@ -236,18 +236,70 @@ export default function CarrierPriceManager() {
     }
   };
 
+  // Mobile için fiyat kartını render eden yardımcı fonksiyon
+  const renderPriceCard = (price: CarrierPrice, index: number) => {
+    return (
+      <div key={price.id || index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+        <div className="flex justify-between items-center mb-3">
+          <div className="font-medium text-gray-700">Desi: 
+            <input
+              type="number"
+              min="1"
+              value={price.desi}
+              onChange={(e) => handlePriceChange(index, 'desi', parseInt(e.target.value) || 0)}
+              className="ml-2 w-16 rounded-md border-gray-300 shadow-sm focus:border-lightGreen focus:ring-lightGreen text-sm"
+            />
+          </div>
+          <button
+            onClick={() => removePrice(index)}
+            className="text-red-600 hover:text-red-900 p-1"
+            aria-label="Sil"
+          >
+            <Trash className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 gap-3">
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-500 mb-1">Şehir İçi Fiyat (₺)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={price.city_price === 0 ? '' : price.city_price}
+              onChange={(e) => handlePriceChange(index, 'city_price', e.target.value === '' ? 0 : parseFloat(e.target.value))}
+              className="w-full rounded-md border-gray-300 shadow-sm focus:border-lightGreen focus:ring-lightGreen text-sm"
+            />
+          </div>
+          
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-500 mb-1">Şehirler Arası Fiyat (₺)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={price.intercity_price === 0 ? '' : price.intercity_price}
+              onChange={(e) => handlePriceChange(index, 'intercity_price', e.target.value === '' ? 0 : parseFloat(e.target.value))}
+              className="w-full rounded-md border-gray-300 shadow-sm focus:border-lightGreen focus:ring-lightGreen text-sm"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-4 md:p-6 max-w-full">
         <div className="flex items-center gap-2 mb-6">
-          <Package className="w-8 h-8 text-lightGreen" />
-          <h1 className="text-2xl font-bold text-darkGreen">Kargo Fiyat Yönetimi</h1>
+          <Package className="w-6 h-6 md:w-8 md:h-8 text-lightGreen" />
+          <h1 className="text-xl md:text-2xl font-bold text-darkGreen">Kargo Fiyat Yönetimi</h1>
         </div>
         
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-8 bg-gray-200 rounded w-3/4 md:w-1/4"></div>
           <div className="space-y-2">
-            {[...Array(6)].map((_, i) => (
+            {[...Array(3)].map((_, i) => (
               <div key={i} className="h-12 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -258,13 +310,13 @@ export default function CarrierPriceManager() {
 
   if (carriers.length === 0) {
     return (
-      <div className="p-6">
+      <div className="p-4 md:p-6 max-w-full">
         <div className="flex items-center gap-2 mb-6">
-          <Package className="w-8 h-8 text-lightGreen" />
-          <h1 className="text-2xl font-bold text-darkGreen">Kargo Fiyat Yönetimi</h1>
+          <Package className="w-6 h-6 md:w-8 md:h-8 text-lightGreen" />
+          <h1 className="text-xl md:text-2xl font-bold text-darkGreen">Kargo Fiyat Yönetimi</h1>
         </div>
         
-        <div className="bg-red-50 border-l-4 border-red-400 p-4">
+        <div className="bg-red-50 border-l-4 border-red-400 p-3 md:p-4">
           <div className="flex">
             <div className="flex-shrink-0">
               <AlertCircle className="h-5 w-5 text-red-400" />
@@ -281,20 +333,20 @@ export default function CarrierPriceManager() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Package className="w-8 h-8 text-lightGreen" />
-        <h1 className="text-2xl font-bold text-darkGreen">Kargo Fiyat Yönetimi</h1>
+    <div className="p-4 md:p-6 max-w-full">
+      <div className="flex items-center gap-2 mb-4 md:mb-6">
+        <Package className="w-6 h-6 md:w-8 md:h-8 text-lightGreen" />
+        <h1 className="text-xl md:text-2xl font-bold text-darkGreen">Kargo Fiyat Yönetimi</h1>
       </div>
 
       {/* Uyarı mesajı */}
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 md:p-4 mb-4 md:mb-6 rounded-sm">
         <div className="flex">
           <div className="flex-shrink-0">
             <AlertCircle className="h-5 w-5 text-yellow-400" />
           </div>
           <div className="ml-3">
-            <p className="text-sm text-yellow-700">
+            <p className="text-xs md:text-sm text-yellow-700">
               Bu sayfada KarVeGo kargo firması için abonelik tiplerine göre kargo fiyatlarını yönetebilirsiniz.
               Fiyatlar desi bazında hesaplanmaktadır ve kullanıcılar abonelik tiplerine göre farklı fiyatlara tabi olacaktır.
             </p>
@@ -303,13 +355,13 @@ export default function CarrierPriceManager() {
       </div>
 
       {/* Kargo Firma Bilgisi */}
-      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+      <div className="bg-blue-50 border-l-4 border-blue-400 p-3 md:p-4 mb-4 md:mb-6 rounded-sm">
         <div className="flex">
           <div className="flex-shrink-0">
             <TruckIcon className="h-5 w-5 text-blue-400" />
           </div>
           <div className="ml-3">
-            <p className="text-sm text-blue-700">
+            <p className="text-xs md:text-sm text-blue-700">
               <strong>KarVeGo</strong> kargo firması için fiyatlandırma ayarlarını düzenliyorsunuz.
             </p>
           </div>
@@ -317,13 +369,13 @@ export default function CarrierPriceManager() {
       </div>
 
       {/* Sekme Başlıkları */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-gray-200 mb-4 md:mb-6 overflow-x-auto">
+        <nav className="-mb-px flex space-x-2 md:space-x-8">
           {(['BRONZE', 'GOLD', 'PREMIUM'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`whitespace-nowrap py-2 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm ${
                 activeTab === tab
                   ? 'border-lightGreen text-darkGreen'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -335,8 +387,13 @@ export default function CarrierPriceManager() {
         </nav>
       </div>
 
-      {/* Fiyat Tablosu */}
-      <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200 mb-6">
+      {/* Mobil Görünüm için Kart Tasarımı */}
+      <div className="md:hidden">
+        {prices[activeTab].map((price, index) => renderPriceCard(price, index))}
+      </div>
+
+      {/* Masaüstü Görünüm için Tablo */}
+      <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden border border-gray-200 mb-6">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -391,6 +448,7 @@ export default function CarrierPriceManager() {
                     <button
                       onClick={() => removePrice(index)}
                       className="text-red-600 hover:text-red-900"
+                      aria-label="Sil"
                     >
                       <Trash className="h-5 w-5" />
                     </button>
@@ -403,10 +461,10 @@ export default function CarrierPriceManager() {
       </div>
 
       {/* Alt Butonlar */}
-      <div className="flex justify-between">
+      <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
         <button
           onClick={addNewPrice}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-lightGreen hover:bg-darkGreen focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkGreen"
+          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-lightGreen hover:bg-darkGreen focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkGreen w-full sm:w-auto"
         >
           <Plus className="mr-2 h-4 w-4" />
           Yeni Fiyat Ekle
@@ -415,7 +473,7 @@ export default function CarrierPriceManager() {
         <button
           onClick={savePrices}
           disabled={saving}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-darkGreen hover:bg-darkGreen/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkGreen disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-darkGreen hover:bg-darkGreen/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkGreen disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
         >
           {saving ? (
             <>

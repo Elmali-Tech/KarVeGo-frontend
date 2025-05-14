@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter, ChevronDown, X, Plus } from 'lucide-react';
+import { Filter, ChevronDown, X, Plus, RefreshCw } from 'lucide-react';
 import { Order, ProductFilter } from './types';
 
 interface FiltersProps {
@@ -41,7 +41,6 @@ const Filters: React.FC<FiltersProps> = ({
   allProducts,
   allQuantities,
   productFilters,
-  setProductFilters,
   currentProduct,
   setCurrentProduct,
   currentQuantity,
@@ -53,6 +52,12 @@ const Filters: React.FC<FiltersProps> = ({
 }) => {
   const [showMultiFilter, setShowMultiFilter] = React.useState(false);
   const activeFilterCount = selectedProductFilters.length;
+  
+  const clearProductFilters = () => {
+    setSelectedProductFilters([]);
+    setProductQuantityFilters({});
+    handleApplyFilters();
+  };
   
   return (
     <div className="w-full">
@@ -105,6 +110,17 @@ const Filters: React.FC<FiltersProps> = ({
           <ChevronDown className="w-4 h-4 ml-1" />
         </button>
         
+        {/* Ürün filtreleri temizleme butonu */}
+        {activeFilterCount > 0 && (
+          <button
+            onClick={clearProductFilters}
+            className="flex items-center gap-1 px-3 py-2 border rounded-md bg-red-50 text-red-600 hover:bg-red-100"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Filtreleri Temizle
+          </button>
+        )}
+        
         {/* Yeni çoklu ürün-miktar filtresi butonu */}
         <button
           onClick={() => setShowMultiFilter(!showMultiFilter)}
@@ -114,6 +130,20 @@ const Filters: React.FC<FiltersProps> = ({
           {productFilters.length > 0 ? `${productFilters.length} Ürün-Miktar Filtresi` : 'Ürün-Miktar Filtresi'}
           <ChevronDown className="w-4 h-4 ml-1" />
         </button>
+        
+        {/* Ürün-miktar filtreleri temizleme butonu */}
+        {productFilters.length > 0 && (
+          <button
+            onClick={() => {
+              handleClearProductFilters();
+              handleApplyFilters();
+            }}
+            className="flex items-center gap-1 px-3 py-2 border rounded-md bg-red-50 text-red-600 hover:bg-red-100"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Filtreleri Temizle
+          </button>
+        )}
       </div>
       
       {/* Ürün filtre paneli */}
@@ -121,21 +151,12 @@ const Filters: React.FC<FiltersProps> = ({
         <div className="bg-gray-50 p-4 rounded-md border mt-3 relative">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-sm font-medium">Ürünlere Göre Filtrele</h3>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setSelectedProductFilters([])}
-                className="text-xs text-gray-500 hover:text-gray-700"
-                disabled={selectedProductFilters.length === 0}
-              >
-                Temizle
-              </button>
-              <button
-                onClick={() => setShowProductFilters(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+            <button
+              onClick={() => setShowProductFilters(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
           
           <div className="max-h-60 overflow-auto mb-3 pr-2">
@@ -204,21 +225,12 @@ const Filters: React.FC<FiltersProps> = ({
         <div className="bg-gray-50 p-4 rounded-md border mt-3 relative">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-sm font-medium">Ürün-Miktar Filtresi</h3>
-            <div className="flex gap-2">
-              <button
-                onClick={handleClearProductFilters}
-                className="text-xs text-gray-500 hover:text-gray-700"
-                disabled={productFilters.length === 0}
-              >
-                Temizle
-              </button>
-              <button
-                onClick={() => setShowMultiFilter(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+            <button
+              onClick={() => setShowMultiFilter(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
           
           {/* Form alanları */}

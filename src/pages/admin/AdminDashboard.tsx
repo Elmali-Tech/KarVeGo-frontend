@@ -1,211 +1,294 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { 
-  Users, ShoppingBag, Package
+  Users, RefreshCw, ExternalLink, ArrowRight,
+  Wallet, TruckIcon, BarChart3, Package, DollarSign
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 type AdminStats = {
   userCount: number;
-  orderCount: number;
-  productCount: number;
-  revenueTotal: number;
+  pendingBalanceCount: number;
+  totalBalance: number;
+};
+
+type RecentUser = {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  account_type: string;
+  status: string;
+  created_at: string;
 };
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState<AdminStats>({
     userCount: 0,
-    orderCount: 0,
-    productCount: 0,
-    revenueTotal: 0
+    pendingBalanceCount: 0,
+    totalBalance: 0
   });
+  const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAdminStats = async () => {
       try {
+        setLoading(true);
         // Kullanıcı sayısını al
         const { count: userCount } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true });
         
-        // Sipariş sayısını al (orders tablosu varsayılmıştır)
-        const { count: orderCount } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true });
+        // Bekleyen bakiye taleplerini al
+        const { count: pendingBalanceCount } = await supabase
+          .from('balance_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'PENDING');
         
-        // Ürün sayısını al
-        const { count: productCount } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true });
+        // Toplam bakiyeyi al
+        const { data: balanceData, error: balanceError } = await supabase
+          .from('profiles')
+          .select('balance');
         
-        // NOT: total_amount sorgusu hata verdiği için kaldırıldı
-        // Şimdilik gelir bilgisini 0 olarak ayarlıyoruz
-        // Eğer orders tablosunda toplam tutarı saklayan farklı bir sütun varsa
-        // o sütunu kullanarak bu kısmı güncelleyebilirsiniz
+        if (balanceError) throw balanceError;
+        
+        const totalBalance = balanceData.reduce((sum, profile) => sum + (profile.balance || 0), 0);
+        
+        // Son 5 kullanıcıyı al
+        const { data: latestUsers, error: usersError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            full_name,
+            phone,
+            account_type,
+            status,
+            created_at
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        if (usersError) throw usersError;
         
         setStats({
           userCount: userCount || 0,
-          orderCount: orderCount || 0,
-          productCount: productCount || 0,
-          revenueTotal: 0 // Gelir hesaplaması devre dışı bırakıldı
+          pendingBalanceCount: pendingBalanceCount || 0,
+          totalBalance: totalBalance
         });
+        
+        setRecentUsers(latestUsers || []);
       } catch (error) {
         console.error('İstatistikler alınırken hata oluştu:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchAdminStats();
   }, []);
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('tr-TR', {
+      style: 'currency',
+      currency: 'TRY',
+      minimumFractionDigits: 2
+    }).format(amount);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch(status) {
+      case 'APPROVED':
+        return {
+          class: 'bg-green-100 text-green-800 border border-green-200',
+          text: 'Onaylandı'
+        };
+      case 'PENDING':
+        return {
+          class: 'bg-amber-100 text-amber-800 border border-amber-200',
+          text: 'Onay Bekliyor'
+        };
+      case 'REJECTED':
+        return {
+          class: 'bg-red-100 text-red-800 border border-red-200',
+          text: 'Reddedildi'
+        };
+      default:
+        return {
+          class: 'bg-gray-100 text-gray-800 border border-gray-200',
+          text: status
+        };
+    }
+  };
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-6">Admin Dashboard</h1>
+    <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-7 w-7 text-darkGreen" />
+          <h1 className="text-2xl font-bold text-gray-800">Admin Paneli</h1>
+        </div>
+        
+        <button 
+          onClick={() => window.location.reload()}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white shadow-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Yenile
+        </button>
+      </div>
       
       {/* Quick navigation */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <h2 className="text-lg font-medium mb-3">Hızlı Erişim</h2>
-        <div className="flex flex-wrap gap-2">
-          <Link to="/admin/users" className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50">
-            <Users className="h-5 w-5 mr-1.5" />
-            Kullanıcılar
-          </Link>
-          {/* Diğer hızlı erişim linkleri buraya eklenebilir */}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Link to="/admin/users" className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all group">
+          <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-blue-50 text-blue-600 mr-4">
+            <Users className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-800">Kullanıcılar</h3>
+            <p className="text-sm text-gray-500">Kullanıcı yönetimi</p>
+          </div>
+          <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+        </Link>
+        
+        <Link to="/admin/bakiye-talepleri" className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all group">
+          <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-amber-50 text-amber-600 mr-4">
+            <Wallet className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-800">Bakiye Talepleri</h3>
+            <p className="text-sm text-gray-500">Bakiye işlemleri</p>
+          </div>
+          <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-amber-600 transition-colors" />
+        </Link>
+        
+        <Link to="/admin/kargo-fiyatlari" className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all group">
+          <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-green-50 text-green-600 mr-4">
+            <TruckIcon className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-800">Kargo Fiyatları</h3>
+            <p className="text-sm text-gray-500">Fiyat yönetimi</p>
+          </div>
+          <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+        </Link>
       </div>
       
       {/* Stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-gray-500">Toplam Kullanıcı</h2>
-            <Users className="h-6 w-6 text-blue-500" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-sm p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium">Toplam Kullanıcı</h2>
+            <Users className="h-6 w-6 opacity-80" />
           </div>
-          <p className="text-3xl font-bold mt-2">{stats.userCount}</p>
+          <p className="text-3xl font-bold">{stats.userCount}</p>
+          <Link 
+            to="/admin/users" 
+            className="inline-flex items-center mt-4 text-sm text-blue-100 hover:text-white transition-colors"
+          >
+            Tüm kullanıcıları görüntüle
+            <ArrowRight className="h-4 w-4 ml-1" />
+          </Link>
         </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-gray-500">Toplam Sipariş</h2>
-            <ShoppingBag className="h-6 w-6 text-green-500" />
+
+        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-sm p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium">Bekleyen Bakiyeler</h2>
+            <Wallet className="h-6 w-6 opacity-80" />
           </div>
-          <p className="text-3xl font-bold mt-2">{stats.orderCount}</p>
+          <p className="text-3xl font-bold">{stats.pendingBalanceCount}</p>
+          <Link 
+            to="/admin/bakiye-talepleri" 
+            className="inline-flex items-center mt-4 text-sm text-amber-100 hover:text-white transition-colors"
+          >
+            Bakiye taleplerini görüntüle
+            <ArrowRight className="h-4 w-4 ml-1" />
+          </Link>
         </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-gray-500">Toplam Ürün</h2>
-            <Package className="h-6 w-6 text-purple-500" />
+
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-sm p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium">Toplam Bakiye</h2>
+            <DollarSign className="h-6 w-6 opacity-80" />
           </div>
-          <p className="text-3xl font-bold mt-2">{stats.productCount}</p>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-gray-500">Toplam Gelir</h2>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <p className="text-3xl font-bold mt-2">{stats.revenueTotal.toFixed(2)} ₺</p>
+          <p className="text-3xl font-bold">{formatCurrency(stats.totalBalance)}</p>
+          <Link 
+            to="/admin/users" 
+            className="inline-flex items-center mt-4 text-sm text-green-100 hover:text-white transition-colors"
+          >
+            Kullanıcı bakiyelerini görüntüle
+            <ArrowRight className="h-4 w-4 ml-1" />
+          </Link>
         </div>
       </div>
       
-      {/* Recent activity & summary sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Son Siparişler</h2>
+      {/* Recent users section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex items-center justify-between p-5 border-b border-gray-200">
+          <div className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-darkGreen" />
+            <h2 className="text-lg font-semibold text-gray-800">Son Kullanıcılar</h2>
+          </div>
+          <Link to="/admin/users" className="text-sm text-darkGreen hover:text-lightGreen flex items-center gap-1 transition-colors font-medium">
+            Tümünü Görüntüle
+            <ExternalLink className="w-4 h-4" />
+          </Link>
+        </div>
+        
+        {loading ? (
+          <div className="flex justify-center items-center p-12">
+            <div className="animate-spin rounded-full h-10 w-10 border-3 border-darkGreen border-t-transparent"></div>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead>
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Müşteri</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tutar</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad Soyad</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hesap Türü</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kayıt Tarihi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                <tr className="hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">#1234</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">Ahmet Yılmaz</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">240.50 ₺</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Teslim Edildi</span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">#1233</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">Ayşe Demir</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">120.00 ₺</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Hazırlanıyor</span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">#1232</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">Mehmet Kaya</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">350.75 ₺</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Kargoda</span>
-                  </td>
-                </tr>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {recentUsers.length > 0 ? (
+                  recentUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{user.full_name || 'İsimsiz'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{user.phone || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {user.account_type === 'INDIVIDUAL' ? 'Bireysel' : 'Kurumsal'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-1 text-xs rounded-full ${getStatusBadge(user.status).class}`}>
+                          {getStatusBadge(user.status).text}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{formatDate(user.created_at)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">
+                      Henüz kullanıcı bulunmuyor.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Sistem Durumu</h2>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm">Disk Kullanımı</span>
-                <span className="text-sm font-medium">65%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '65%' }}></div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm">Bellek Kullanımı</span>
-                <span className="text-sm font-medium">40%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div className="bg-green-600 h-2.5 rounded-full" style={{ width: '40%' }}></div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm">CPU Kullanımı</span>
-                <span className="text-sm font-medium">25%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div className="bg-purple-600 h-2.5 rounded-full" style={{ width: '25%' }}></div>
-              </div>
-            </div>
-            
-            <div className="mt-6">
-              <h3 className="text-sm font-medium mb-2">Aktif Servisler</h3>
-              <ul className="space-y-2">
-                <li className="flex items-center text-sm">
-                  <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                  API Servisi
-                </li>
-                <li className="flex items-center text-sm">
-                  <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                  Veritabanı
-                </li>
-                <li className="flex items-center text-sm">
-                  <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                  Kargo Entegrasyonu
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

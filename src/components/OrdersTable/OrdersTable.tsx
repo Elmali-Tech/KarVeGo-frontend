@@ -69,6 +69,7 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
   const [selectedSenderAddress, setSelectedSenderAddress] = useState<SenderAddress | null>(null);
   const [labelPrice, setLabelPrice] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [balanceError, setBalanceError] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<Order['status'] | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -489,6 +490,7 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
     if (address && selectedOrder) {
       setSelectedSenderAddress(address);
       setIsLoading(true);
+      setBalanceError('');
       try {
         const price = await calculateShippingPrice(selectedOrder, address);
         setLabelPrice(price);
@@ -506,6 +508,9 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
       toast.error('Lütfen gerekli bilgileri doldurun');
       return;
     }
+
+    // Reset any previous balance errors
+    setBalanceError('');
 
     try {
       setIsLoading(true);
@@ -530,7 +535,10 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
       }
 
       if (!profileData || profileData.balance < labelPrice) {
-        throw new Error('Yetersiz bakiye');
+        // Instead of throwing an error, set the balance error state and return early
+        setBalanceError(`Yetersiz bakiye! Bu etiketi oluşturmak için ${labelPrice.toFixed(2)} TL gerekiyor, mevcut bakiyeniz ${profileData ? profileData.balance.toFixed(2) : 0} TL.`);
+        setIsLoading(false);
+        return;
       }
 
       // Yeni API'yi kullanarak etiket oluştur
@@ -600,7 +608,11 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
     } catch (err) {
       console.error('Error creating label:', err);
       const errorMessage = err instanceof Error ? err.message : 'Bilinmeyen hata';
-      toast.error(`Etiket oluşturulurken bir hata oluştu: ${errorMessage}`);
+      
+      // Don't show toast for insufficient balance since we already display it in the modal
+      if (errorMessage !== 'Yetersiz bakiye') {
+        toast.error(`Etiket oluşturulurken bir hata oluştu: ${errorMessage}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1161,6 +1173,13 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
     }
   };
 
+  useEffect(() => {
+    // Reset balance error when modal is closed
+    if (!isLabelModalOpen) {
+      setBalanceError('');
+    }
+  }, [isLabelModalOpen]);
+
   if (loading) {
     return (
       <div className="animate-pulse p-4 space-y-4">
@@ -1375,6 +1394,7 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
           selectedSenderAddress={selectedSenderAddress}
           labelPrice={labelPrice}
           isLoading={isLoading}
+          balanceError={balanceError}
           handleSenderAddressChange={handleSenderAddressChange}
           handleCreateLabel={handleCreateLabel}
           setIsLabelModalOpen={setIsLabelModalOpen}
