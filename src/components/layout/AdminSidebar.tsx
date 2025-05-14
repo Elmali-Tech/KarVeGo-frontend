@@ -11,7 +11,6 @@ import {
   LogOut,
   DollarSign,
   TruckIcon,
-  Boxes,
   Barcode,
 } from "lucide-react";
 
@@ -43,13 +42,6 @@ const AdminSidebar = ({ pendingBalanceCount }: AdminSidebarProps) => {
             <span>Kullanıcılar</span>
           </Link>
           <Link
-            to="/admin/siparisler"
-            className="flex items-center space-x-2 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ShoppingBag className="h-5 w-5 text-darkGreen" />
-            <span>Siparişler</span>
-          </Link>
-          <Link
             to="/admin/urunler"
             className="flex items-center space-x-2 p-3 rounded-lg hover:bg-gray-100 transition-colors"
           >
@@ -69,13 +61,6 @@ const AdminSidebar = ({ pendingBalanceCount }: AdminSidebarProps) => {
                 </span>
               )}
             </div>
-          </Link>
-          <Link
-            to="/admin/kargo-firmalari"
-            className="flex items-center space-x-2 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <Boxes className="h-5 w-5 text-darkGreen" />
-            <span>Kargo Firmaları</span>
           </Link>
           <Link
             to="/admin/kargo-fiyatlari"
@@ -118,7 +103,7 @@ const AdminSidebar = ({ pendingBalanceCount }: AdminSidebarProps) => {
 
       {/* Mobile sidebar (responsive) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
-        <div className="grid grid-cols-6 p-2">
+        <div className="grid grid-cols-5 p-2">
           <Link to="/admin" className="flex flex-col items-center p-2">
             <BarChart3 className="h-6 w-6 text-darkGreen" />
             <span className="text-xs">Dashboard</span>
@@ -126,13 +111,6 @@ const AdminSidebar = ({ pendingBalanceCount }: AdminSidebarProps) => {
           <Link to="/admin/users" className="flex flex-col items-center p-2">
             <Users className="h-6 w-6 text-darkGreen" />
             <span className="text-xs">Kullanıcılar</span>
-          </Link>
-          <Link
-            to="/admin/siparisler"
-            className="flex flex-col items-center p-2"
-          >
-            <ShoppingBag className="h-6 w-6 text-darkGreen" />
-            <span className="text-xs">Siparişler</span>
           </Link>
           <Link
             to="/admin/bakiye-talepleri"
@@ -145,13 +123,6 @@ const AdminSidebar = ({ pendingBalanceCount }: AdminSidebarProps) => {
                 {pendingBalanceCount > 9 ? "9+" : pendingBalanceCount}
               </span>
             )}
-          </Link>
-          <Link
-            to="/admin/kargo-firmalari"
-            className="flex flex-col items-center p-2"
-          >
-            <Boxes className="h-6 w-6 text-darkGreen" />
-            <span className="text-xs">Firmalar</span>
           </Link>
           <Link
             to="/admin/kargo-fiyatlari"

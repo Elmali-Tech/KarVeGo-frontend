@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
@@ -44,6 +44,17 @@ export default function OrderForm({ onClose, onSuccess }: OrderFormProps) {
     length: '30',
     weight: '1',
   });
+  
+  // Yeni müşteri için state
+  const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    name: '',
+    phone: '',
+    city: '',
+    district: '',
+    address: '',
+  });
+  const [savingCustomer, setSavingCustomer] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -81,6 +92,47 @@ export default function OrderForm({ onClose, onSuccess }: OrderFormProps) {
     } catch (err) {
       console.error('Müşteriler yüklenirken hata oluştu:', err);
       toast.error('Müşteriler yüklenirken hata oluştu');
+    }
+  };
+  
+  // Yeni müşteri ekleme fonksiyonu
+  const handleCreateCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation(); // Ana formun submit edilmesini engelle
+    setSavingCustomer(true);
+
+    try {
+      const { data, error } = await supabase.from('customers').insert({
+        user_id: user?.id,
+        ...newCustomer,
+      }).select();
+
+      if (error) throw error;
+
+      toast.success('Müşteri başarıyla eklendi');
+      
+      // Müşteri listesini güncelle
+      await fetchCustomers();
+      
+      // Yeni eklenen müşteriyi seç
+      if (data && data.length > 0) {
+        setSelectedCustomer(data[0].id);
+      }
+      
+      // Formu kapat ve temizle
+      setShowNewCustomerForm(false);
+      setNewCustomer({
+        name: '',
+        phone: '',
+        city: '',
+        district: '',
+        address: '',
+      });
+    } catch (err) {
+      console.error('Müşteri eklenirken bir hata oluştu:', err);
+      toast.error('Müşteri eklenirken bir hata oluştu');
+    } finally {
+      setSavingCustomer(false);
     }
   };
 
@@ -201,26 +253,124 @@ export default function OrderForm({ onClose, onSuccess }: OrderFormProps) {
         <div className="space-y-4">
           {/* Müşteri Seçimi */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Müşteri
-            </label>
-            <select
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-lightGreen focus:border-lightGreen"
-              value={selectedCustomer}
-              onChange={(e) => setSelectedCustomer(e.target.value)}
-              required
-            >
-              <option value="">Müşteri Seçin</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Müşteri
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowNewCustomerForm(!showNewCustomerForm)}
+                className="inline-flex items-center text-xs px-2 py-1 text-darkGreen hover:text-lightGreen transition-colors"
+              >
+                <UserPlus className="w-3 h-3 mr-1" />
+                {showNewCustomerForm ? 'İptal' : 'Yeni Müşteri Ekle'}
+              </button>
+            </div>
+            
+            {!showNewCustomerForm ? (
+              <select
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-lightGreen focus:border-lightGreen"
+                value={selectedCustomer}
+                onChange={(e) => setSelectedCustomer(e.target.value)}
+                required={!showNewCustomerForm}
+                disabled={showNewCustomerForm}
+              >
+                <option value="">Müşteri Seçin</option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="mt-3 bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h3 className="text-sm font-medium text-darkGreen mb-3">Yeni Müşteri Bilgileri</h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      AD SOYAD
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newCustomer.name}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                      className="block w-full rounded-md border-gray-300 focus:ring-lightGreen focus:border-lightGreen text-sm shadow-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      TELEFON
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={newCustomer.phone}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                      className="block w-full rounded-md border-gray-300 focus:ring-lightGreen focus:border-lightGreen text-sm shadow-sm"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        İL
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomer.city}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, city: e.target.value })}
+                        className="block w-full rounded-md border-gray-300 focus:ring-lightGreen focus:border-lightGreen text-sm shadow-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        İLÇE
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomer.district}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, district: e.target.value })}
+                        className="block w-full rounded-md border-gray-300 focus:ring-lightGreen focus:border-lightGreen text-sm shadow-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      ADRES
+                    </label>
+                    <textarea
+                      required
+                      value={newCustomer.address}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                      rows={2}
+                      className="block w-full rounded-md border-gray-300 focus:ring-lightGreen focus:border-lightGreen text-sm shadow-sm"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="button"
+                      onClick={handleCreateCustomer}
+                      disabled={savingCustomer}
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm rounded-md text-white bg-darkGreen hover:bg-lightGreen focus:outline-none transition-colors"
+                    >
+                      {savingCustomer ? 'Kaydediliyor...' : 'Müşteri Kaydet'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Müşteri Detayları */}
-          {selectedCustomerData && (
+          {/* Müşteri Detayları - Sadece bir müşteri seçildiğinde göster */}
+          {selectedCustomerData && !showNewCustomerForm && (
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
               <h3 className="text-sm font-medium text-darkGreen mb-2">Müşteri Bilgileri</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
@@ -253,18 +403,26 @@ export default function OrderForm({ onClose, onSuccess }: OrderFormProps) {
               Ürün Ekle
             </button>
           </div>
-          
+
           {selectedProducts.length === 0 ? (
-            <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
-              Henüz ürün eklenmedi. Ürün eklemek için "Ürün Ekle" butonuna tıklayın.
+            <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+              <p className="text-sm text-gray-500">Henüz ürün eklenmedi</p>
+              <button
+                type="button"
+                onClick={addProduct}
+                className="mt-2 inline-flex items-center px-3 py-1 border border-darkGreen text-sm leading-4 font-medium rounded-md text-darkGreen hover:bg-darkGreen hover:text-white focus:outline-none transition-colors"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Ürün Ekle
+              </button>
             </div>
           ) : (
             <div className="space-y-3">
               {selectedProducts.map((product, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-                  <div className="flex-1">
+                <div key={index} className="flex items-center space-x-2 bg-gray-50 p-3 rounded-lg">
+                  <div className="flex-grow">
                     <select
-                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-lightGreen focus:border-lightGreen"
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-lightGreen focus:border-lightGreen text-sm"
                       value={product.productId}
                       onChange={(e) => updateProduct(index, 'productId', e.target.value)}
                       required
@@ -277,20 +435,20 @@ export default function OrderForm({ onClose, onSuccess }: OrderFormProps) {
                       ))}
                     </select>
                   </div>
-                  <div className="w-24">
+                  <div className="w-20">
                     <input
                       type="number"
                       min="1"
-                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-lightGreen focus:border-lightGreen"
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-lightGreen focus:border-lightGreen text-sm"
                       value={product.quantity}
-                      onChange={(e) => updateProduct(index, 'quantity', parseInt(e.target.value) || 1)}
+                      onChange={(e) => updateProduct(index, 'quantity', e.target.value)}
                       required
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => removeProduct(index)}
-                    className="text-red-500 hover:text-red-700"
+                    className="text-red-500 hover:text-red-700 transition-colors"
                   >
                     <Trash2 className="h-5 w-5" />
                   </button>
@@ -300,7 +458,7 @@ export default function OrderForm({ onClose, onSuccess }: OrderFormProps) {
           )}
         </div>
 
-        {/* Kargo Bilgileri */}
+        {/* Paket Bilgileri */}
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
           <h3 className="text-sm font-medium text-darkGreen mb-3">Paket Boyutları</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -361,48 +519,37 @@ export default function OrderForm({ onClose, onSuccess }: OrderFormProps) {
               />
             </div>
           </div>
-        </div>
-
-        {/* Not */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Not
-          </label>
-          <textarea
-            rows={3}
-            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-lightGreen focus:border-lightGreen"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Sipariş ile ilgili eklemek istediğiniz notlar..."
-          />
+          
+          {/* Not */}
+          <div className="mt-4">
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Not
+            </label>
+            <textarea
+              rows={2}
+              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-lightGreen focus:border-lightGreen text-sm"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Sipariş ile ilgili eklemek istediğiniz notlar..."
+            />
+          </div>
         </div>
 
         {/* Butonlar */}
-        <div className="flex justify-end space-x-3 pt-2">
+        <div className="flex justify-end space-x-3">
           <button
             type="button"
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lightGreen transition-colors"
             onClick={onClose}
-            disabled={loading}
+            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
           >
             İptal
           </button>
           <button
             type="submit"
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkGreen hover:bg-lightGreen focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkGreen transition-colors"
             disabled={loading}
+            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkGreen hover:bg-lightGreen focus:outline-none transition-colors"
           >
-            {loading ? (
-              <div className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Oluşturuluyor...
-              </div>
-            ) : (
-              'Sipariş Oluştur'
-            )}
+            {loading ? "Kaydediliyor..." : "Sipariş Oluştur"}
           </button>
         </div>
       </form>

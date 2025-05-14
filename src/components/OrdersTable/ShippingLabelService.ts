@@ -1,7 +1,7 @@
 import { supabase } from '../../lib/supabase';
 import { Order, SenderAddress } from './types';
 import { sendToSuratKargoV2 } from '../../lib/surat-kargo-v2';
-import { toast } from 'react-hot-toast';
+import { calculateRoundedDesi } from './utils';
 
 // Kargo fiyatı hesaplayan fonksiyon
 export const calculateShippingPrice = async (order: Order, senderAddress: SenderAddress) => {
@@ -9,7 +9,8 @@ export const calculateShippingPrice = async (order: Order, senderAddress: Sender
     return 0;
   }
 
-  const desi = (order.package_height * order.package_width * order.package_length) / 3000;
+  // Yuvarlanmış desi değerini kullan
+  const roundedDesi = calculateRoundedDesi(order);
   
   const isLocal = senderAddress.city.toLowerCase() === order.shipping_address.city?.toLowerCase();
   
@@ -44,7 +45,7 @@ export const calculateShippingPrice = async (order: Order, senderAddress: Sender
     .select('city_price, intercity_price, desi, subscription_type')
     .eq('subscription_type', subscriptionType)
     .order('desi')
-    .gte('desi', desi)
+    .gte('desi', roundedDesi) // Yuvarlanmış desi değerini kullan
     .limit(1);
     
   if (pricesError) {
@@ -163,6 +164,9 @@ export const sendToNewSuratCargoApi = async (order: Order, senderAddress: Sender
     // Benzersiz takip numarası oluştur
     const uniqueTrackingCode = `3636${Math.floor(Math.random() * 10000000)}`.substring(0, 10);
 
+    // Yuvarlanmış desi değerini hesapla
+    const roundedDesi = calculateRoundedDesi(order);
+
     // Yeni API için istek payload'ını oluştur
     const gonderi = {
       KisiKurum: aliciAdi,
@@ -182,8 +186,7 @@ export const sendToNewSuratCargoApi = async (order: Order, senderAddress: Sender
       ReferansNo: "",
       OzelKargoTakipNo: uniqueTrackingCode,
       Adet: 1,
-      BirimDesi: String(order.package_length && order.package_width && order.package_height ? 
-        (order.package_length * order.package_width * order.package_height) / 3000 : 1),
+      BirimDesi: String(roundedDesi), // Yuvarlanmış desi değerini kullan
       BirimKg: String(order.package_weight || 1),
       KargoIcerigi: kargoIcerigi,
       KapidanOdemeTahsilatTipi: 0,
@@ -212,102 +215,5 @@ export const sendToNewSuratCargoApi = async (order: Order, senderAddress: Sender
   } catch (error: unknown) {
     console.error('Sürat Kargo Yeni API Error:', error);
     throw error;
-  }
-};
-
-const handleCreateLabel = async () => {
-  if (!selectedOrder || !selectedSenderAddress) {
-    toast.error('Lütfen gerekli bilgileri doldurun');
-    return;
-  }
-
-  try {
-    setIsLoading(true);
-    toast.info('Etiket oluşturuluyor...');
-    
-    // Profil verisinden abonelik tipini al
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      throw new Error('Kullanıcı oturumu bulunamadı');
-    }
-
-    // Kullanıcının mevcut bakiyesini kontrol et
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('balance')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError) {
-      throw new Error('Profil bilgisi alınamadı');
-    }
-
-    if (!profileData || profileData.balance < labelPrice) {
-      throw new Error('Yetersiz bakiye');
-    }
-
-    // Yeni API'yi kullanarak etiket oluştur
-    const result = await sendToNewSuratCargoApi(selectedOrder, selectedSenderAddress);
-    
-    if (!result.isSuccess) {
-      throw new Error(result.message || 'Kargo etiketi oluşturulurken bir hata oluştu');
-    }
-    
-    // Takip numarası al
-    const trackingNumber = result.trackingNumber || '';
-    
-    // Etiket bilgilerini veritabanına kaydet
-    try {
-      // Önce bakiyeyi güncelle
-      const { error: balanceError } = await supabase
-        .from('profiles')
-        .update({ 
-          balance: profileData.balance - labelPrice 
-        })
-        .eq('id', user.id);
-
-      if (balanceError) {
-        throw new Error('Bakiye güncellenirken hata oluştu');
-      }
-
-      // Siparişi güncelle
-      await supabase
-        .from('orders')
-        .update({
-          tracking_number: trackingNumber,
-          status: 'PRINTED',
-          shipping_tracking_code: trackingNumber
-        })
-        .eq('id', selectedOrder.id);
-      
-      // Shipping_labels tablosuna kaydet
-      await supabase
-        .from('shipping_labels')
-        .insert({
-          order_id: selectedOrder.id,
-          tracking_number: trackingNumber,
-          kargo_takip_no: trackingNumber,
-          carrier: 'Sürat Kargo',
-          customer_id: selectedOrder.customer.id || null,
-          subscription_type: profileData.subscription_type,
-          created_at: new Date().toISOString(),
-          shipping_price: labelPrice
-        });
-        
-    } catch (dbError) {
-      console.error('Veritabanı işlemi sırasında hata oluştu:', dbError);
-      throw new Error(`Veritabanı hatası: ${dbError instanceof Error ? dbError.message : 'Bilinmeyen hata'}`);
-    }
-
-    toast.success('Etiket başarıyla oluşturuldu');
-    setIsLabelModalOpen(false);
-    onOrderUpdate();
-  } catch (err) {
-    console.error('Error creating label:', err);
-    const errorMessage = err instanceof Error ? err.message : 'Bilinmeyen hata';
-    toast.error(`Etiket oluşturulurken bir hata oluştu: ${errorMessage}`);
-  } finally {
-    setIsLoading(false);
   }
 }; 

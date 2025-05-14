@@ -205,64 +205,95 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
   const handleDeleteSelected = async () => {
     if (selectedOrders.length === 0) return;
 
+    // Silinecek siparişleri kontrol et
+    const validOrderIds = selectedOrders.filter(id => typeof id === 'string' && id.trim() !== '');
+    
+    if (validOrderIds.length === 0) {
+      toast.error('Silinecek geçerli sipariş bulunamadı');
+      return;
+    }
+    
     try {
-      const result = await Swal.fire({
-        title: 'Siparişleri Sil',
-        text: `${selectedOrders.length} siparişi silmek istediğinize emin misiniz?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Evet, Sil',
-        cancelButtonText: 'İptal',
-      });
-
-      if (result.isConfirmed) {
-        // ID'lerin geçerli string formatında olduğunu kontrol et
-        const validOrderIds = selectedOrders.filter(id => typeof id === 'string' && id.trim() !== '');
+      // Önce siparişlerin durumlarını kontrol et
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, status')
+        .in('id', validOrderIds);
+      
+      if (ordersError) throw ordersError;
+      
+      const deletableOrders = ordersData.filter(
+        order => !['PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status)
+      );
+      
+      const nonDeletableOrders = ordersData.filter(
+        order => ['PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status)
+      );
+      
+      if (deletableOrders.length === 0) {
+        toast.error('Seçilen siparişlerden hiçbiri silinemez. Yazdırıldı, Kargoda veya Sorunlu durumundaki siparişler silinemez.');
+        return;
+      }
+      
+      if (nonDeletableOrders.length > 0) {
+        // Kullanıcıyı uyar
+        const nonDeletableCount = nonDeletableOrders.length;
+        const deletableCount = deletableOrders.length;
         
-        if (validOrderIds.length === 0) {
-          toast.error('Silinecek geçerli sipariş bulunamadı');
+        const result = await Swal.fire({
+          title: 'Siparişleri Sil',
+          html: `Seçilen ${ordersData.length} siparişten <strong>${deletableCount}</strong> tanesi silinebilir.<br/><br/>
+                <strong>${nonDeletableCount}</strong> sipariş durumu "Yazdırıldı", "Kargoda" veya "Sorunlu" olduğu için silinemez.<br/><br/>
+                Sadece silinebilir durumda olan ${deletableCount} siparişi silmek istiyor musunuz?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#6b7280',
+          confirmButtonText: 'Evet, Sil',
+          cancelButtonText: 'İptal',
+        });
+        
+        if (!result.isConfirmed) {
           return;
         }
+      } else {
+        // Tüm siparişler silinebilir
+        const result = await Swal.fire({
+          title: 'Siparişleri Sil',
+          text: `${deletableOrders.length} siparişi silmek istediğinize emin misiniz?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#6b7280',
+          confirmButtonText: 'Evet, Sil',
+          cancelButtonText: 'İptal',
+        });
         
-        if (validOrderIds.length !== selectedOrders.length) {
-          console.warn(`${selectedOrders.length - validOrderIds.length} adet geçersiz sipariş ID'si filtrelendi`);
+        if (!result.isConfirmed) {
+          return;
         }
-
-        const { error, count } = await supabase
-          .from('orders')
-          .delete()
-          .in('id', validOrderIds)
-          .select('count');
-
-        if (error) throw error;
-
-        // Silinen sipariş sayısını kontrol et
-        const deletedCount = count || validOrderIds.length; // count yoksa varsayılan olarak tümü silinmiş kabul et
-        
-        if (deletedCount !== validOrderIds.length) {
-          // Bazı siparişler silinemedi
-          console.warn(`${validOrderIds.length - deletedCount} adet sipariş silinemedi`);
-          await Swal.fire({
-            title: 'Kısmi Başarı',
-            text: `${deletedCount} sipariş silindi, ${validOrderIds.length - deletedCount} sipariş silinemedi.`,
-            icon: 'warning',
-            confirmButtonColor: '#10B981',
-          });
-        } else {
-          // Tüm siparişler başarıyla silindi
-          await Swal.fire({
-            title: 'Başarılı!',
-            text: `${deletedCount} sipariş başarıyla silindi`,
-            icon: 'success',
-            confirmButtonColor: '#10B981',
-          });
-        }
-
-        setSelectedOrders([]);
-        onOrderUpdate();
       }
+
+      // Sadece silinebilir siparişleri sil
+      const deletableOrderIds = deletableOrders.map(order => order.id);
+      
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .in('id', deletableOrderIds);
+
+      if (error) throw error;
+
+      // Başarıyla silindi
+      await Swal.fire({
+        title: 'Başarılı!',
+        text: `${deletableOrderIds.length} sipariş başarıyla silindi`,
+        icon: 'success',
+        confirmButtonColor: '#10B981',
+      });
+
+      setSelectedOrders([]);
+      onOrderUpdate();
     } catch (err) {
       console.error('Error deleting orders:', err);
       toast.error('Siparişler silinirken bir hata oluştu');
@@ -277,6 +308,21 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
     }
 
     try {
+      // Önce siparişin durumunu kontrol et
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('status')
+        .eq('id', id)
+        .single();
+      
+      if (orderError) throw orderError;
+      
+      // Yazdırıldı, Kargoda veya Sorunlu durumundaki siparişler silinemez
+      if (['PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(orderData.status)) {
+        toast.error('Bu sipariş "Yazdırıldı", "Kargoda" veya "Sorunlu" durumunda olduğu için silinemez.');
+        return;
+      }
+
       const result = await Swal.fire({
         title: 'Siparişi Sil',
         text: 'Bu siparişi silmek istediğinize emin misiniz?',
@@ -289,20 +335,12 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
       });
 
       if (result.isConfirmed) {
-        const { error, count } = await supabase
+        const { error } = await supabase
           .from('orders')
           .delete()
-          .eq('id', id)
-          .select('count');
+          .eq('id', id);
 
         if (error) throw error;
-
-        // Siparişin gerçekten silinip silinmediğini kontrol et
-        if (!count || count < 1) {
-          console.warn(`Sipariş silinmedi veya bulunamadı: ${id}`);
-          toast.warning('Sipariş bulunamadı veya zaten silinmiş');
-          return;
-        }
 
         await Swal.fire({
           title: 'Başarılı!',
@@ -644,13 +682,40 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
       case 'SHIPPED': return 'Kargoda';
       case 'PROBLEMATIC': return 'Sorunlu';
       case 'COMPLETED': return 'Tamamlandı';
+      case 'CANCELED': return 'İptal Edildi';
       case 'ALL': return 'Tümü';
       default: return status;
     }
   };
 
   const handleShowDetail = (order: Order) => {
-    setDetailOrder(order);
+    // Siparişin müşteri, adres ve ürün bilgilerini alıp, ürün fiyat bilgilerini kontrol et ve detay modalına gönder
+    // Eğer ürünlerin unit_price ve total_price alanları tanımlı değilse, bunları hesapla
+    const orderWithPrices = {
+      ...order,
+      products: order.products.map(product => {
+        // Eğer ürünün birim fiyat ve toplam fiyat değerleri yoksa, default değerler ata
+        // Gerçek bir sipariş oluşturmada bu değerler olmalı, ama eski siparişlere uyumluluk için kontrol edelim
+        if (!product.unit_price || !product.total_price) {
+          // Makul bir default birim fiyat belirle (bu örnekte 10 TL)
+          const defaultUnitPrice = 10;
+          return {
+            ...product,
+            unit_price: product.unit_price || defaultUnitPrice,
+            total_price: product.total_price || (defaultUnitPrice * product.quantity)
+          };
+        }
+        return product;
+      }),
+      // Toplam değerleri hesapla
+      subtotal_price: order.subtotal_price || order.products.reduce((total, p) => 
+        total + (p.total_price || (p.unit_price || 10) * p.quantity), 0),
+      total_tax: order.total_tax || 0,
+      total_price: order.total_price || order.products.reduce((total, p) => 
+        total + (p.total_price || (p.unit_price || 10) * p.quantity), 0)
+    };
+    
+    setDetailOrder(orderWithPrices);
     setShowDetailModal(true);
   };
 
@@ -721,6 +786,348 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
     }
   }, [isLabelModalOpen, selectedOrder]);
 
+  // Etiket modalı açıkken sipariş verileri değişirse fiyatı otomatik güncelle
+  useEffect(() => {
+    if (isLabelModalOpen && selectedOrder && selectedSenderAddress) {
+      (async () => {
+        setIsLoading(true);
+        try {
+          const price = await calculateShippingPrice(selectedOrder, selectedSenderAddress);
+          setLabelPrice(price);
+        } catch (err) {
+          console.error('Error calculating shipping price:', err);
+          toast.error('Kargo fiyatı hesaplanırken bir hata oluştu');
+        } finally {
+          setIsLoading(false);
+        }
+      })();
+    }
+  }, [
+    isLabelModalOpen, 
+    selectedOrder?.package_height, 
+    selectedOrder?.package_width, 
+    selectedOrder?.package_length,
+    selectedSenderAddress?.id
+  ]);
+
+  // Sipariş iptal etme fonksiyonu
+  const handleCancelOrder = async (id: string) => {
+    if (!id || typeof id !== 'string' || id.trim() === '') {
+      toast.error('Geçersiz sipariş ID\'si');
+      return;
+    }
+
+    try {
+      // Önce siparişin durumunu kontrol et
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('status, tracking_number')
+        .eq('id', id)
+        .single();
+      
+      if (orderError) throw orderError;
+      
+      // Sadece yazdırıldı durumundaki siparişler iptal edilebilir
+      if (orderData.status !== 'PRINTED') {
+        toast.error('Sadece "Yazdırıldı" durumundaki siparişler iptal edilebilir.');
+        return;
+      }
+
+      // Etiket fiyatını shipping_labels tablosundan al
+      const { data: labelData, error: labelError } = await supabase
+        .from('shipping_labels')
+        .select('shipping_price, tracking_number')
+        .eq('order_id', id)
+        .eq('tracking_number', orderData.tracking_number)
+        .single();
+      
+      if (labelError) {
+        console.error('Etiket bilgisi alınamadı:', labelError);
+        toast.error('Etiket bilgisi alınamadı, bakiye iadesi yapılamayabilir.');
+      }
+
+      const result = await Swal.fire({
+        title: 'Siparişi İptal Et',
+        text: labelData 
+          ? `Bu siparişi iptal etmek istediğinize emin misiniz? İptal edildiğinde ${labelData.shipping_price} TL bakiyenize iade edilecektir.`
+          : 'Bu siparişi iptal etmek istediğinize emin misiniz?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Evet, İptal Et',
+        cancelButtonText: 'Vazgeç',
+      });
+
+      if (result.isConfirmed) {
+        // Transaction başlat
+        setIsLoading(true);
+
+        // Kullanıcı bilgisini al
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('Kullanıcı oturumu bulunamadı');
+        }
+
+        // Eğer etiket bilgisi varsa bakiyeyi güncelle
+        if (labelData && labelData.shipping_price) {
+          // Kullanıcının mevcut bakiyesini al
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('balance')
+            .eq('id', user.id)
+            .single();
+
+          if (profileError) {
+            console.error('Profil bilgisi alınamadı:', profileError);
+            toast.error('Bakiye güncellenemedi: Profil bilgisi alınamadı');
+          } else {
+            // Bakiyeyi güncelle
+            const { error: balanceError } = await supabase
+              .from('profiles')
+              .update({ 
+                balance: profileData.balance + labelData.shipping_price 
+              })
+              .eq('id', user.id);
+
+            if (balanceError) {
+              console.error('Bakiye güncellenirken hata:', balanceError);
+              toast.error('Bakiye iade edilemedi: Güncelleme hatası');
+            } else {
+              // Bakiye güncellemesi için özel bir event fırlat
+              window.dispatchEvent(new CustomEvent('balanceUpdated', {
+                detail: { newBalance: profileData.balance + labelData.shipping_price }
+              }));
+              
+              // İptal kaydını shipping_labels tablosuna ekle
+              try {
+                await supabase
+                  .from('shipping_labels')
+                  .insert({
+                    order_id: id,
+                    tracking_number: labelData.tracking_number,
+                    kargo_takip_no: labelData.tracking_number,
+                    carrier: 'Sürat Kargo',
+                    customer_id: null,
+                    subscription_type: null,
+                    created_at: new Date().toISOString(),
+                    shipping_price: -labelData.shipping_price, // Negatif değer, iade işlemi
+                    is_canceled: true,
+                    canceled_at: new Date().toISOString(),
+                    cancel_note: 'Kullanıcı tarafından iptal edildi'
+                  });
+              } catch (insertError) {
+                console.error('İptal kaydı eklenirken hata:', insertError);
+                // Bu hata kritik değil, devam et
+              }
+            }
+          }
+        }
+
+        // Siparişi iptal et
+        const { error } = await supabase
+          .from('orders')
+          .update({ status: 'CANCELED' })
+          .eq('id', id);
+
+        if (error) throw error;
+
+        await Swal.fire({
+          title: 'Başarılı!',
+          text: labelData 
+            ? `Sipariş başarıyla iptal edildi ve ${labelData.shipping_price} TL bakiyenize iade edildi.`
+            : 'Sipariş başarıyla iptal edildi.',
+          icon: 'success',
+          confirmButtonColor: '#10B981',
+        });
+
+        onOrderUpdate();
+      }
+    } catch (err) {
+      console.error('Error canceling order:', err);
+      toast.error('Sipariş iptal edilirken bir hata oluştu');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Toplu iptal işlemi
+  const handleBulkCancelOrders = async () => {
+    if (selectedOrders.length === 0) return;
+
+    // İptal edilecek siparişleri kontrol et
+    const validOrderIds = selectedOrders.filter(id => typeof id === 'string' && id.trim() !== '');
+    
+    if (validOrderIds.length === 0) {
+      toast.error('İptal edilecek geçerli sipariş bulunamadı');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      // Önce siparişlerin durumlarını kontrol et
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, status, tracking_number')
+        .in('id', validOrderIds);
+      
+      if (ordersError) throw ordersError;
+      
+      // Sadece yazdırıldı durumundaki siparişler iptal edilebilir
+      const cancelableOrders = ordersData.filter(order => order.status === 'PRINTED');
+      const nonCancelableOrders = ordersData.filter(order => order.status !== 'PRINTED');
+      
+      if (cancelableOrders.length === 0) {
+        toast.error('Seçilen siparişlerden hiçbiri iptal edilemez. Sadece "Yazdırıldı" durumundaki siparişler iptal edilebilir.');
+        return;
+      }
+      
+      // İptal edilebilir siparişlerin ID'lerini al
+      const cancelableOrderIds = cancelableOrders.map(order => order.id);
+      
+      // İptal edilebilir siparişlerin etiket fiyatlarını al
+      const { data: labelData, error: labelError } = await supabase
+        .from('shipping_labels')
+        .select('order_id, shipping_price, tracking_number')
+        .in('order_id', cancelableOrderIds);
+        
+      if (labelError) {
+        console.error('Etiket bilgileri alınamadı:', labelError);
+        toast.error('Etiket bilgileri alınamadı, bakiye iadesi yapılamayabilir.');
+      }
+      
+      // Toplam iade edilecek tutarı hesapla
+      let totalRefundAmount = 0;
+      if (labelData && labelData.length > 0) {
+        totalRefundAmount = labelData.reduce((total, label) => total + label.shipping_price, 0);
+      }
+      
+      let confirmMessage = '';
+      
+      if (nonCancelableOrders.length > 0) {
+        confirmMessage = `Seçilen ${ordersData.length} siparişten <strong>${cancelableOrders.length}</strong> tanesi iptal edilebilir.<br/><br/>
+                          <strong>${nonCancelableOrders.length}</strong> sipariş "Yazdırıldı" durumunda olmadığı için iptal edilemez.`;
+      } else {
+        confirmMessage = `${cancelableOrders.length} siparişi iptal etmek istediğinize emin misiniz?`;
+      }
+      
+      if (totalRefundAmount > 0) {
+        confirmMessage += `<br/><br/>İptal işlemi sonrasında toplam <strong>${totalRefundAmount} TL</strong> bakiyenize iade edilecektir.`;
+      }
+      
+      const result = await Swal.fire({
+        title: 'Siparişleri İptal Et',
+        html: confirmMessage,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Evet, İptal Et',
+        cancelButtonText: 'Vazgeç',
+      });
+      
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      // Kullanıcı bilgisini al
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Kullanıcı oturumu bulunamadı');
+      }
+
+      // Eğer iade edilecek tutar varsa bakiyeyi güncelle
+      if (totalRefundAmount > 0) {
+        // Kullanıcının mevcut bakiyesini al
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('balance')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Profil bilgisi alınamadı:', profileError);
+          toast.error('Bakiye güncellenemedi: Profil bilgisi alınamadı');
+        } else {
+          // Bakiyeyi güncelle
+          const { error: balanceError } = await supabase
+            .from('profiles')
+            .update({ 
+              balance: profileData.balance + totalRefundAmount 
+            })
+            .eq('id', user.id);
+
+          if (balanceError) {
+            console.error('Bakiye güncellenirken hata:', balanceError);
+            toast.error('Bakiye iade edilemedi: Güncelleme hatası');
+          } else {
+            // Bakiye güncellemesi için özel bir event fırlat
+            window.dispatchEvent(new CustomEvent('balanceUpdated', {
+              detail: { newBalance: profileData.balance + totalRefundAmount }
+            }));
+            
+            // İptal kayıtlarını shipping_labels tablosuna ekle
+            if (labelData && labelData.length > 0) {
+              try {
+                await supabase
+                  .from('shipping_labels')
+                  .insert(
+                    labelData.map(label => ({
+                      order_id: label.order_id,
+                      tracking_number: label.tracking_number,
+                      kargo_takip_no: label.tracking_number,
+                      carrier: 'Sürat Kargo',
+                      customer_id: null,
+                      subscription_type: null,
+                      created_at: new Date().toISOString(),
+                      shipping_price: -label.shipping_price, // Negatif değer, iade işlemi
+                      is_canceled: true,
+                      canceled_at: new Date().toISOString(),
+                      cancel_note: 'Toplu iptal işlemi'
+                    }))
+                  );
+              } catch (insertError) {
+                console.error('İptal kayıtları eklenirken hata:', insertError);
+                // Bu hata kritik değil, devam et
+              }
+            }
+          }
+        }
+      }
+      
+      // Tüm siparişleri iptal et
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'CANCELED' })
+        .in('id', cancelableOrderIds);
+
+      if (error) throw error;
+
+      // Başarıyla iptal edildi
+      let successMessage = `${cancelableOrderIds.length} sipariş başarıyla iptal edildi.`;
+      if (totalRefundAmount > 0) {
+        successMessage += ` ${totalRefundAmount} TL bakiyenize iade edildi.`;
+      }
+      
+      await Swal.fire({
+        title: 'Başarılı!',
+        text: successMessage,
+        icon: 'success',
+        confirmButtonColor: '#10B981',
+      });
+
+      setSelectedOrders([]);
+      onOrderUpdate();
+    } catch (err) {
+      console.error('Error canceling orders:', err);
+      toast.error('Siparişler iptal edilirken bir hata oluştu');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="animate-pulse p-4 space-y-4">
@@ -788,6 +1195,12 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
                   Kargoya Ver
                 </button>
                 <button
+                  onClick={handleBulkCancelOrders}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                >
+                  İptal Et
+                </button>
+                <button
                   onClick={handleDeleteSelected}
                   className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                 >
@@ -820,6 +1233,12 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
               className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none whitespace-nowrap"
             >
               Kargoya Ver
+            </button>
+            <button
+              onClick={handleBulkCancelOrders}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none whitespace-nowrap"
+            >
+              İptal
             </button>
             <button
               onClick={handleDeleteSelected}
@@ -880,6 +1299,7 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
             handleBuyLabel={handleBuyLabel}
             showOrderJson={showOrderJson}
             handleDeleteOrder={handleDeleteOrder}
+            handleCancelOrder={handleCancelOrder}
           />
         </div>
       </div>
@@ -900,6 +1320,9 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
           closeEditModal={closeEditModal}
           handleSaveOrder={handleSaveOrder}
           setEditingOrder={setEditingOrder}
+          isLabelModalOpen={isLabelModalOpen}
+          selectedOrder={selectedOrder}
+          setSelectedOrder={setSelectedOrder}
         />
       )}
 

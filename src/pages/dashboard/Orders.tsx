@@ -10,6 +10,7 @@ import {
   FileText,
   ExternalLink,
   Store,
+  Ban,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
@@ -25,7 +26,7 @@ interface Order {
     email?: string;
     phone?: string;
   };
-  status: 'NEW' | 'READY' | 'PRINTED' | 'SHIPPED' | 'PROBLEMATIC' | 'COMPLETED';
+  status: 'NEW' | 'READY' | 'PRINTED' | 'SHIPPED' | 'PROBLEMATIC' | 'COMPLETED' | 'CANCELED';
   created_at: string;
   products: {
     name: string;
@@ -378,7 +379,7 @@ export default function Orders() {
     <Layout>
       <div className="space-y-4 md:space-y-6 px-2 sm:px-0">
         {/* Status Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-4">
           {/* Tümü Kartı */}
           <div 
             className={`bg-white rounded-lg shadow p-3 md:p-4 cursor-pointer transition-all
@@ -490,6 +491,24 @@ export default function Orders() {
 
           <div 
             className={`bg-white rounded-lg shadow p-3 md:p-4 cursor-pointer transition-all
+              ${activeStatusFilter === 'CANCELED' 
+                ? 'border-2 border-red-500 ring-2 ring-red-500 ring-opacity-30' 
+                : 'border-l-4 border-red-500 hover:shadow-md'}`}
+            onClick={() => handleStatusCardClick('CANCELED')}
+          >
+            <div className="flex items-center gap-2 md:gap-3">
+              <Ban className="w-5 h-5 md:w-6 md:h-6 text-red-500" />
+              <div>
+                <h3 className="text-xs md:text-sm font-medium text-gray-700">İptal Edilen</h3>
+                <p className="text-xl md:text-2xl font-semibold text-red-600">
+                  {orders.filter(o => o.status === 'CANCELED').length}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div 
+            className={`bg-white rounded-lg shadow p-3 md:p-4 cursor-pointer transition-all
               ${activeStatusFilter === 'COMPLETED' 
                 ? 'border-2 border-teal-500 ring-2 ring-teal-500 ring-opacity-30' 
                 : 'border-l-4 border-teal-500 hover:shadow-md'}`}
@@ -576,6 +595,7 @@ export default function Orders() {
                 {activeStatusFilter === 'SHIPPED' && 'Kargoya Verilen Siparişler'}
                 {activeStatusFilter === 'PROBLEMATIC' && 'Sorunlu Siparişler'}
                 {activeStatusFilter === 'COMPLETED' && 'Tamamlanan Siparişler'}
+                {activeStatusFilter === 'CANCELED' && 'İptal Edilen Siparişler'}
                 {' '}gösteriliyor.
               </span>
               <span className="text-xs text-blue-600">({filteredOrders.length} sipariş)</span>

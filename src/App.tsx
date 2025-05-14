@@ -28,7 +28,6 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UsersList from "./pages/admin/UsersList";
 import BalanceRequests from "./pages/admin/BalanceRequests";
 import CarrierPriceManager from "./pages/admin/CarrierPriceManager";
-import CarrierManager from "./pages/admin/CarrierManager";
 import BarkodAyarlari from './pages/admin/BarkodAyarlari';
 
 function AuthWrapper() {
@@ -162,7 +161,7 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<UsersList />} />
             <Route path="bakiye-talepleri" element={<BalanceRequests />} />
-            <Route path="kargo-firmalari" element={<CarrierManager />} />
+            <Route path="kargo-firmalari" element={<Navigate to="/admin/kargo-fiyatlari" replace />} />
             <Route path="kargo-fiyatlari" element={<CarrierPriceManager />} />
             <Route
               path="siparisler"

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { Package, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
+import { Modal } from '../common/Modal';
 
 interface ProductFormProps {
   onClose: () => void;
@@ -55,27 +56,24 @@ export default function ProductForm({ onClose, onSuccess }: ProductFormProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg w-full max-w-2xl">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Ürün Bilgisi</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-500"
-          >
-            <X className="w-6 h-6" />
-          </button>
+    <Modal title="Ürün Ekle" isOpen={true} onClose={onClose}>
+      <div className="p-4 md:p-6">
+        <div className="mb-6 flex items-center text-darkGreen">
+          <Package className="mr-2 h-5 w-5" />
+          <h2 className="text-lg font-medium">Ürün Bilgileri</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Ürün Adı */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               ÜRÜN ADI
             </label>
             <input
               type="text"
               required
-              className="mt-1 block w-full rounded-md focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+              placeholder="Ürün adını girin"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-lightGreen focus:border-lightGreen sm:text-sm"
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
@@ -83,27 +81,30 @@ export default function ProductForm({ onClose, onSuccess }: ProductFormProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
+          {/* Ürün Kodu ve SKU */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 ÜRÜN KODU
               </label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                placeholder="Örn: PRD001"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-lightGreen focus:border-lightGreen sm:text-sm"
                 value={formData.code}
                 onChange={(e) =>
                   setFormData({ ...formData, code: e.target.value })
                 }
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                ÜRÜN STOK KODU - SKU
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                STOK KODU (SKU)
               </label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                placeholder="Örn: SKU12345"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-lightGreen focus:border-lightGreen sm:text-sm"
                 value={formData.sku}
                 onChange={(e) =>
                   setFormData({ ...formData, sku: e.target.value })
@@ -112,33 +113,35 @@ export default function ProductForm({ onClose, onSuccess }: ProductFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                ÜRÜN FİYAT
+          {/* Fiyat ve KDV */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                ÜRÜN FİYATI
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="relative rounded-md shadow-sm">
                 <input
                   type="number"
                   step="0.01"
                   required
-                  className="block w-full pr-12 rounded-md focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                  placeholder="0.00"
+                  className="block w-full pr-12 rounded-md border-gray-300 shadow-sm focus:ring-lightGreen focus:border-lightGreen sm:text-sm"
                   value={formData.price}
                   onChange={(e) =>
                     setFormData({ ...formData, price: e.target.value })
                   }
                 />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <span className="text-gray-500 sm:text-sm">TL</span>
                 </div>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                ÜRÜN KDV ORANI
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                KDV ORANI
               </label>
               <select
-                className="mt-1 block w-full rounded-md focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-lightGreen focus:border-lightGreen sm:text-sm"
                 value={formData.vat_rate}
                 onChange={(e) =>
                   setFormData({ ...formData, vat_rate: e.target.value })
@@ -152,106 +155,127 @@ export default function ProductForm({ onClose, onSuccess }: ProductFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                ÜRÜN EN
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <input
-                  type="number"
-                  step="0.01"
-                  className="block w-full pr-12 rounded-md focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                  value={formData.width}
-                  onChange={(e) =>
-                    setFormData({ ...formData, width: e.target.value })
-                  }
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <span className="text-gray-500 sm:text-sm">cm</span>
+          {/* Boyutlar */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-darkGreen mb-3">Ürün Boyutları ve Ağırlık</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  GENİŞLİK
+                </label>
+                <div className="relative rounded-md shadow-sm">
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="block w-full pr-8 rounded-md border-gray-300 shadow-sm focus:ring-lightGreen focus:border-lightGreen sm:text-sm"
+                    value={formData.width}
+                    onChange={(e) =>
+                      setFormData({ ...formData, width: e.target.value })
+                    }
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                    <span className="text-gray-400 text-xs">cm</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                ÜRÜN BOY
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <input
-                  type="number"
-                  step="0.01"
-                  className="block w-full pr-12 rounded-md focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                  value={formData.height}
-                  onChange={(e) =>
-                    setFormData({ ...formData, height: e.target.value })
-                  }
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <span className="text-gray-500 sm:text-sm">cm</span>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  YÜKSEKLİK
+                </label>
+                <div className="relative rounded-md shadow-sm">
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="block w-full pr-8 rounded-md border-gray-300 shadow-sm focus:ring-lightGreen focus:border-lightGreen sm:text-sm"
+                    value={formData.height}
+                    onChange={(e) =>
+                      setFormData({ ...formData, height: e.target.value })
+                    }
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                    <span className="text-gray-400 text-xs">cm</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  UZUNLUK
+                </label>
+                <div className="relative rounded-md shadow-sm">
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="block w-full pr-8 rounded-md border-gray-300 shadow-sm focus:ring-lightGreen focus:border-lightGreen sm:text-sm"
+                    value={formData.length}
+                    onChange={(e) =>
+                      setFormData({ ...formData, length: e.target.value })
+                    }
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                    <span className="text-gray-400 text-xs">cm</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  AĞIRLIK
+                </label>
+                <div className="relative rounded-md shadow-sm">
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="block w-full pr-8 rounded-md border-gray-300 shadow-sm focus:ring-lightGreen focus:border-lightGreen sm:text-sm"
+                    value={formData.weight}
+                    onChange={(e) =>
+                      setFormData({ ...formData, weight: e.target.value })
+                    }
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                    <span className="text-gray-400 text-xs">kg</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                ÜRÜN YÜKSEKLİK
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <input
-                  type="number"
-                  step="0.01"
-                  className="block w-full pr-12 rounded-md focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                  value={formData.length}
-                  onChange={(e) =>
-                    setFormData({ ...formData, length: e.target.value })
-                  }
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <span className="text-gray-500 sm:text-sm">cm</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                ÜRÜN AĞIRLIK
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <input
-                  type="number"
-                  step="0.01"
-                  className="block w-full pr-12 rounded-md focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                  value={formData.weight}
-                  onChange={(e) =>
-                    setFormData({ ...formData, weight: e.target.value })
-                  }
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <span className="text-gray-500 sm:text-sm">Kg</span>
-                </div>
-              </div>
-            </div>
+          {/* Bilgilendirme notu */}
+          <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-md border border-blue-100">
+            <p>* Boyut ve ağırlık bilgileri, kargo hesaplamalarında kullanılacaktır. Doğru ölçüler girilmesi önerilir.</p>
           </div>
 
-          <div className="flex justify-end gap-4 mt-6">
+          {/* Butonlar */}
+          <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
             >
               İptal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkGreen hover:bg-lightGreen focus:outline-none transition-colors disabled:opacity-50 flex items-center"
             >
-              {loading ? 'Kaydediliyor...' : 'Kaydet'}
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                  Kaydediliyor...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Ürünü Kaydet
+                </>
+              )}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 }

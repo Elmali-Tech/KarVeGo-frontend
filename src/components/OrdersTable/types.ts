@@ -6,7 +6,7 @@ export interface Order {
     phone?: string;
     id?: string;
   };
-  status: 'NEW' | 'READY' | 'PRINTED' | 'SHIPPED' | 'PROBLEMATIC' | 'COMPLETED';
+  status: 'NEW' | 'READY' | 'PRINTED' | 'SHIPPED' | 'PROBLEMATIC' | 'COMPLETED' | 'CANCELED';
   created_at: string;
   products: {
     name: string;

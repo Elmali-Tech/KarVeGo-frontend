@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Order } from './types';
 
@@ -8,6 +8,9 @@ interface OrderEditProps {
   closeEditModal: () => void;
   handleSaveOrder: () => void;
   setEditingOrder: (order: Order | null) => void;
+  isLabelModalOpen?: boolean;
+  selectedOrder?: Order | null;
+  setSelectedOrder?: (order: Order | null) => void;
 }
 
 const OrderEdit: React.FC<OrderEditProps> = ({
@@ -15,8 +18,33 @@ const OrderEdit: React.FC<OrderEditProps> = ({
   editingOrder,
   closeEditModal,
   handleSaveOrder,
-  setEditingOrder
+  setEditingOrder,
+  isLabelModalOpen,
+  selectedOrder,
+  setSelectedOrder
 }) => {
+  // Eğer etiket modalı açıkken sipariş düzenleniyor ve düzenlenen sipariş ile 
+  // etiket modalındaki sipariş aynı ise, paket boyutları değiştiğinde 
+  // etiket modalındaki siparişi de güncelle
+  useEffect(() => {
+    if (editingOrder && isLabelModalOpen && selectedOrder && setSelectedOrder && 
+        editingOrder.id === selectedOrder.id) {
+      // Sadece paket boyutları bilgilerini güncelle
+      setSelectedOrder({
+        ...selectedOrder,
+        package_height: editingOrder.package_height,
+        package_width: editingOrder.package_width,
+        package_length: editingOrder.package_length,
+        package_weight: editingOrder.package_weight
+      });
+    }
+  }, [
+    editingOrder,
+    isLabelModalOpen,
+    selectedOrder,
+    setSelectedOrder
+  ]);
+
   if (!editingOrder) return null;
 
   return (

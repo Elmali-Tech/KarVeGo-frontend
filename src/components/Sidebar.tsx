@@ -31,7 +31,7 @@ export default function Sidebar({ isAdmin, isSettingsPage }: SidebarProps) {
 
   return (
     <div className="w-full">
-      <nav className="space-y-2 bg-white rounded-lg">
+      <nav className="space-y-2 px-2 bg-white rounded-lg p-2">
         {isAdmin && (
           <MainNavLink href="/admin" icon={<LayoutDashboard className="w-5 h-5" />}>
             Admin Paneli
@@ -45,6 +45,9 @@ export default function Sidebar({ isAdmin, isSettingsPage }: SidebarProps) {
         </MainNavLink>
         <MainNavLink href="/musteriler" icon={<Users className="w-5 h-5" />}>
           Müşteriler
+        </MainNavLink>
+        <MainNavLink href="/kargo-fiyatlari" icon={<DollarSign className="w-5 h-5" />}>
+          Kargo Fiyatları
         </MainNavLink>
         <div className="relative">
           <MainNavLink 
@@ -79,7 +82,7 @@ export default function Sidebar({ isAdmin, isSettingsPage }: SidebarProps) {
             <SubNavLink href="/ayarlar/anlasmam">
               Kendi Anlaşmamı Ekle
             </SubNavLink>
-            <SubNavLink href="/ayarlar/barkod-ayarlari">
+            <SubNavLink href="/ayarlar/barkodayarlari">
               Barkod Ayarları
             </SubNavLink>
             <SubNavLink href="/ayarlar/sifre-degistir">
@@ -87,9 +90,6 @@ export default function Sidebar({ isAdmin, isSettingsPage }: SidebarProps) {
             </SubNavLink>
           </div>
         </div>
-        <MainNavLink href="/kargo-fiyatlari" icon={<DollarSign className="w-5 h-5" />}>
-          Kargo Fiyatları
-        </MainNavLink>
       </nav>
     </div>
   );

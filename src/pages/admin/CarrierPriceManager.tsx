@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, Plus, Trash, Save, AlertCircle } from 'lucide-react';
+import { Package, Plus, Trash, Save, AlertCircle, TruckIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface CarrierPrice {
@@ -56,7 +56,7 @@ export default function CarrierPriceManager() {
 
       setCarriers(data || []);
       
-      // Eğer kargo firması varsa, ilk firmayı seç
+      // Her zaman ilk (ve tek) firmayı seç
       if (data && data.length > 0) {
         setSelectedCarrier(data[0].id);
       }
@@ -180,10 +180,6 @@ export default function CarrierPriceManager() {
     }
   };
 
-  const handleCarrierChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedCarrier(e.target.value);
-  };
-
   const savePrices = async () => {
     try {
       setSaving(true);
@@ -299,30 +295,25 @@ export default function CarrierPriceManager() {
           </div>
           <div className="ml-3">
             <p className="text-sm text-yellow-700">
-              Bu sayfada farklı kargo firmaları ve abonelik tipleri için kargo fiyatlarını yönetebilirsiniz.
+              Bu sayfada KarVeGo kargo firması için abonelik tiplerine göre kargo fiyatlarını yönetebilirsiniz.
               Fiyatlar desi bazında hesaplanmaktadır ve kullanıcılar abonelik tiplerine göre farklı fiyatlara tabi olacaktır.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Kargo Firma Seçimi */}
-      <div className="mb-6">
-        <label htmlFor="carrier" className="block text-sm font-medium text-gray-700">
-          Kargo Firması
-        </label>
-        <select
-          id="carrier"
-          value={selectedCarrier || ''}
-          onChange={handleCarrierChange}
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-lightGreen focus:border-lightGreen sm:text-sm rounded-md"
-        >
-          {carriers.map((carrier) => (
-            <option key={carrier.id} value={carrier.id}>
-              {carrier.name} {!carrier.is_active && '(Pasif)'}
-            </option>
-          ))}
-        </select>
+      {/* Kargo Firma Bilgisi */}
+      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <TruckIcon className="h-5 w-5 text-blue-400" />
+          </div>
+          <div className="ml-3">
+            <p className="text-sm text-blue-700">
+              <strong>KarVeGo</strong> kargo firması için fiyatlandırma ayarlarını düzenliyorsunuz.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Sekme Başlıkları */}
@@ -381,8 +372,8 @@ export default function CarrierPriceManager() {
                       type="number"
                       min="0"
                       step="0.01"
-                      value={price.city_price}
-                      onChange={(e) => handlePriceChange(index, 'city_price', parseFloat(e.target.value) || 0)}
+                      value={price.city_price === 0 ? '' : price.city_price}
+                      onChange={(e) => handlePriceChange(index, 'city_price', e.target.value === '' ? 0 : parseFloat(e.target.value))}
                       className="block w-32 rounded-md border-gray-300 shadow-sm focus:border-lightGreen focus:ring-lightGreen sm:text-sm"
                     />
                   </td>
@@ -391,8 +382,8 @@ export default function CarrierPriceManager() {
                       type="number"
                       min="0"
                       step="0.01"
-                      value={price.intercity_price}
-                      onChange={(e) => handlePriceChange(index, 'intercity_price', parseFloat(e.target.value) || 0)}
+                      value={price.intercity_price === 0 ? '' : price.intercity_price}
+                      onChange={(e) => handlePriceChange(index, 'intercity_price', e.target.value === '' ? 0 : parseFloat(e.target.value))}
                       className="block w-32 rounded-md border-gray-300 shadow-sm focus:border-lightGreen focus:ring-lightGreen sm:text-sm"
                     />
                   </td>

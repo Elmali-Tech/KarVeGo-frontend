@@ -153,39 +153,6 @@ const OrderDetail: React.FC<OrderDetailProps> = ({
           </div>
         </div>
 
-        {/* Ödeme Özeti */}
-        {(detailOrder.subtotal_price || detailOrder.total_tax || detailOrder.total_discounts || detailOrder.total_price) && (
-          <div className="mt-4 bg-gray-50 p-4 rounded-md">
-            <h3 className="text-sm font-medium text-darkGreen mb-3">Ödeme Özeti</h3>
-            <div className="space-y-1">
-              {detailOrder.subtotal_price && (
-                <div className="flex justify-between text-sm">
-                  <span>Ara Toplam:</span>
-                  <span>{formatPrice(detailOrder.subtotal_price)}</span>
-                </div>
-              )}
-              {detailOrder.total_tax && (
-                <div className="flex justify-between text-sm">
-                  <span>Toplam Vergi:</span>
-                  <span>{formatPrice(detailOrder.total_tax)}</span>
-                </div>
-              )}
-              {detailOrder.total_discounts && (
-                <div className="flex justify-between text-sm">
-                  <span>Toplam İndirim:</span>
-                  <span>-{formatPrice(detailOrder.total_discounts)}</span>
-                </div>
-              )}
-              {detailOrder.total_price && (
-                <div className="flex justify-between text-sm font-medium border-t pt-1 mt-1">
-                  <span>Genel Toplam:</span>
-                  <span>{formatPrice(detailOrder.total_price)}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Not */}
         {detailOrder.note && (
           <div className="mt-4 bg-gray-50 p-4 rounded-md">

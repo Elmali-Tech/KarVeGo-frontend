@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, Trash2, Code, Edit, Tag, Eye, MoreHorizontal, Filter, X } from 'lucide-react';
+import { Package, Trash2, Code, Edit, Tag, Eye, MoreHorizontal, Filter, X, Ban } from 'lucide-react';
 import { Order } from './types';
 import { getStatusBadgeClass, getStatusText } from './utils';
 
@@ -14,6 +14,7 @@ interface TableViewProps {
   handleBuyLabel: (order: Order) => void;
   showOrderJson: (order: Order) => void;
   handleDeleteOrder: (orderId: string) => void;
+  handleCancelOrder: (orderId: string) => void;
 }
 
 const TableView: React.FC<TableViewProps> = ({
@@ -26,7 +27,8 @@ const TableView: React.FC<TableViewProps> = ({
   handleEditOrder,
   handleBuyLabel,
   showOrderJson,
-  handleDeleteOrder
+  handleDeleteOrder,
+  handleCancelOrder
 }) => {
   // State for dropdown menus
   const [openActionMenu, setOpenActionMenu] = React.useState<string | null>(null);
@@ -189,13 +191,26 @@ const TableView: React.FC<TableViewProps> = ({
                             <Code className="w-4 h-4 mr-2 text-gray-500" />
                             JSON
                           </button>
-                          <button
-                            onClick={() => handleDeleteOrder(order.id)}
-                            className="flex items-center w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Sil
-                          </button>
+                          {/* İptal butonu sadece yazdırıldı durumundaki siparişler için göster */}
+                          {order.status === 'PRINTED' && (
+                            <button
+                              onClick={() => handleCancelOrder(order.id)}
+                              className="flex items-center w-full px-4 py-2 text-sm text-left text-orange-600 hover:bg-orange-50"
+                            >
+                              <Ban className="w-4 h-4 mr-2" />
+                              İptal Et
+                            </button>
+                          )}
+                          {/* Sil butonu sadece yazdırıldı, kargoda ve sorunlu durumunda olmayanlar için göster */}
+                          {!['PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status) && (
+                            <button
+                              onClick={() => handleDeleteOrder(order.id)}
+                              className="flex items-center w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Sil
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
@@ -266,13 +281,32 @@ const TableView: React.FC<TableViewProps> = ({
                           <Code className="w-3 h-3 mr-2" />
                           JSON
                         </button>
-                        <button
-                          onClick={() => handleDeleteOrder(order.id)}
-                          className="flex items-center w-full px-3 py-2 text-xs text-left text-red-600 hover:bg-red-50 border-t"
-                        >
-                          <Trash2 className="w-3 h-3 mr-2" />
-                          Sil
-                        </button>
+                        {/* İptal butonu sadece yazdırıldı durumundaki siparişler için göster */}
+                        {order.status === 'PRINTED' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelOrder(order.id);
+                            }}
+                            className="flex items-center w-full px-3 py-2 text-xs text-left text-orange-600 hover:bg-orange-50"
+                          >
+                            <Ban className="w-4 h-4 mr-1" />
+                            İptal Et
+                          </button>
+                        )}
+                        {/* Sil butonu sadece yazdırıldı, kargoda ve sorunlu durumunda olmayanlar için göster */}
+                        {!['PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteOrder(order.id);
+                            }}
+                            className="flex items-center w-full px-3 py-2 text-xs text-left text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Sil
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}

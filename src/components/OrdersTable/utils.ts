@@ -15,6 +15,8 @@ export const getStatusBadgeClass = (status: Order['status']) => {
       return 'bg-red-100 text-red-800';
     case 'COMPLETED':
       return 'bg-green-100 text-green-800';
+    case 'CANCELED':
+      return 'bg-red-50 text-red-600';
     default:
       return 'bg-gray-100 text-gray-800';
   }
@@ -35,6 +37,8 @@ export const getStatusText = (status: Order['status']) => {
       return 'Sorunlu';
     case 'COMPLETED':
       return 'Tamamlandı';
+    case 'CANCELED':
+      return 'İptal Edildi';
     default:
       return status;
   }
@@ -47,6 +51,23 @@ export const calculateDesi = (order: Order | null): string => {
   }
   const desi = (order.package_height * order.package_width * order.package_length) / 3000;
   return desi.toFixed(2);
+};
+
+// Fiyatlandırma için desi hesaplayan fonksiyon (yuvarlamalı)
+export const calculateRoundedDesi = (order: Order | null): number => {
+  if (!order?.package_height || !order?.package_width || !order?.package_length) {
+    return 0;
+  }
+  
+  const desi = (order.package_height * order.package_width * order.package_length) / 3000;
+  const fraction = desi % 1;
+  
+  // 0.5'ten küçükse aşağı, 0.5 ve üzeriyse yukarı yuvarla
+  if (fraction < 0.5) {
+    return Math.floor(desi);
+  } else {
+    return Math.ceil(desi);
+  }
 };
 
 // Fiyat formatlaması

@@ -35,12 +35,18 @@ export default function CarrierPrices() {
     }
   }, [user]);
 
-  // Carriers yüklendiğinde veya seçilen kargo firması değiştiğinde fiyatları getir
+  // Carriers yüklendiğinde fiyatları getir - artık seçilen kargo firması değişimine gerek yok
   useEffect(() => {
-    if (selectedCarrier && userSubscriptionType) {
-      fetchPrices(selectedCarrier, userSubscriptionType);
+    if (carriers.length > 0 && userSubscriptionType) {
+      // KarVeGo'yu bul (veya ilk firmayı kullan)
+      // Varsayılan olarak ilk firmayı kullanalım, sonuçta hepsi KarVeGo olarak gösterilecek
+      const firstCarrier = carriers[0];
+      if (firstCarrier) {
+        setSelectedCarrier(firstCarrier.id);
+        fetchPrices(firstCarrier.id, userSubscriptionType);
+      }
     }
-  }, [selectedCarrier, userSubscriptionType]);
+  }, [carriers, userSubscriptionType]);
 
   const fetchCarriers = async () => {
     try {
@@ -104,10 +110,6 @@ export default function CarrierPrices() {
     }
   };
 
-  const handleCarrierChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedCarrier(e.target.value);
-  };
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('tr-TR', {
       style: 'currency',
@@ -115,10 +117,9 @@ export default function CarrierPrices() {
     }).format(price);
   };
 
-  const getCarrierName = (carrierId: string | null) => {
-    if (!carrierId) return '';
-    const carrier = carriers.find(c => c.id === carrierId);
-    return carrier ? carrier.name : '';
+  const getCarrierName = () => {
+    // Kargo firması ne olursa olsun her zaman KarVeGo gösterilecek
+    return "KarVeGo";
   };
 
   if (loading) {
@@ -153,24 +154,15 @@ export default function CarrierPrices() {
           </p>
         </div>
 
-        {/* Kargo Firma Seçimi */}
-        {carriers.length > 0 && (
-          <div className="mb-6">
-            <label htmlFor="carrier" className="block text-sm font-medium text-gray-700 mb-2">
-              Kargo Firması Seçin
-            </label>
-            <select
-              id="carrier"
-              value={selectedCarrier || ''}
-              onChange={handleCarrierChange}
-              className="block w-full md:w-1/3 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-lightGreen focus:border-lightGreen sm:text-sm rounded-md"
-            >
-              {carriers.map((carrier) => (
-                <option key={carrier.id} value={carrier.id}>
-                  {carrier.name}
-                </option>
-              ))}
-            </select>
+        {/* Kargo Firma Bilgisi - Seçim yerine sadece bilgi göster */}
+        {carriers.length > 0 && selectedCarrier && (
+          <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-base font-medium text-darkGreen">
+              Kargo Firması
+            </h2>
+            <div className="mt-1 text-lg font-semibold text-black">
+              KarVeGo
+            </div>
           </div>
         )}
 
@@ -216,7 +208,7 @@ export default function CarrierPrices() {
                   <tr>
                     <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
                       {selectedCarrier 
-                        ? `${getCarrierName(selectedCarrier)} için bu abonelik tipine ait fiyat bulunamadı.`
+                        ? `${getCarrierName()} için bu abonelik tipine ait fiyat bulunamadı.`
                         : 'Lütfen bir kargo firması seçin.'
                       }
                     </td>
