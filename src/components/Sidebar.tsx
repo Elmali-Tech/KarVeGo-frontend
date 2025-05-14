@@ -82,8 +82,8 @@ export default function Sidebar({ isAdmin, isSettingsPage }: SidebarProps) {
             <SubNavLink href="/ayarlar/anlasmam">
               Kendi Anlaşmamı Ekle
             </SubNavLink>
-            <SubNavLink href="/ayarlar/barkodayarlari">
-              Barkod Ayarları
+            <SubNavLink href="/ayarlar/barkod-tasarimi">
+              Barkod Tasarımım
             </SubNavLink>
             <SubNavLink href="/ayarlar/sifre-degistir">
               Şifre Değiştir

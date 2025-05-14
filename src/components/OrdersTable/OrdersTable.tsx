@@ -13,7 +13,8 @@ import OrderDetail from './OrderDetail';
 import OrderEdit from './OrderEdit';
 import OrderJsonModal from './OrderJsonModal';
 import LabelModal from './LabelModal';
-import BarkodModal, { LabelData, BarkodTasarim } from './BarkodModal';
+import BarkodModal, { LabelData } from './BarkodModal';
+import type { BarkodTasarim } from './BarkodModal';
 
 interface OrdersTableProps {
   orders: Order[];
@@ -45,11 +46,14 @@ const defaultTasarim: BarkodTasarim = {
     width: 350,
     height: 500,
     logoUrl: '',
+    logoWidth: 100,
+    logoHeight: 50,
     footerText: 'KarVeGo © 2024',
     footerColor: '#777777',
     barcodeWidth: 200,
     barcodeHeight: 40
   },
+  user_id: '',
   is_default: true
 };
 
@@ -101,21 +105,33 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
   // Varsayılan barkod tasarımını getir
   const fetchBarkodTasarim = async () => {
     try {
+      // Kullanıcı kimliğini al
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('Kullanıcı oturumu bulunamadı');
+        return;
+      }
+      
+      // Kullanıcının varsayılan tasarımını veya herhangi bir tasarımını al
       const { data, error } = await supabase
         .from('barkod_tasarimlari')
         .select('*')
+        .eq('user_id', user.id)
         .eq('is_default', true)
         .maybeSingle();
 
       if (error) throw error;
       
       if (data) {
+        // Varsayılan tasarım varsa kullan
         setBarkodTasarim(data);
       } else {
-        // Varsayılan yoksa, ilk kaydı al
+        // Varsayılan yoksa, en son oluşturulan tasarımı al
         const { data: allTasarimlar, error: allError } = await supabase
           .from('barkod_tasarimlari')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1);
           
@@ -123,8 +139,25 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
         
         if (allTasarimlar && allTasarimlar.length > 0) {
           setBarkodTasarim(allTasarimlar[0]);
+        } else {
+          // Hiç tasarım yoksa varsayılan tasarımı kullan
+          // Varsayılan tasarımın user_id değerini güncelle
+          const newDefaultTasarim = {
+            ...defaultTasarim,
+            user_id: user.id
+          };
+          setBarkodTasarim(newDefaultTasarim);
+          
+          // Kullanıcı için varsayılan tasarımı oluştur
+          try {
+            await supabase
+              .from('barkod_tasarimlari')
+              .insert([newDefaultTasarim]);
+            console.log('Varsayılan barkod tasarımı oluşturuldu');
+          } catch (insertError) {
+            console.error('Varsayılan tasarım oluşturulamadı:', insertError);
+          }
         }
-        // Hiç kayıt yoksa varsayılan tasarımı kullan (zaten state'te o var)
       }
     } catch (err) {
       console.error('Barkod tasarımı yüklenirken hata oluştu:', err);

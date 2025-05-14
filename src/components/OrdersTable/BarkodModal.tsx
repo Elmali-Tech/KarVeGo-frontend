@@ -62,11 +62,14 @@ export interface BarkodTasarim {
     width: number;
     height: number;
     logoUrl: string;
+    logoWidth: number;
+    logoHeight: number;
     footerText: string;
     footerColor: string;
     barcodeWidth: number;
     barcodeHeight: number;
   };
+  user_id?: string;
   is_default: boolean;
   created_at?: string;
 }
@@ -190,7 +193,12 @@ const BarkodModal: React.FC<BarkodModalProps> = ({
                       src={barkodTasarim.config.logoUrl} 
                       alt="Logo"
                       crossOrigin="anonymous"
-                      style={{ maxHeight: '100px', maxWidth: '150px', display: 'inline-block' }}
+                      style={{ 
+                        width: `${barkodTasarim.config.logoWidth}px`,
+                        height: `${barkodTasarim.config.logoHeight}px`,
+                        objectFit: 'contain',
+                        display: 'inline-block' 
+                      }}
                     />
                   ) : (
                     <div style={{ fontWeight: 'bold' }}>{selectedSenderAddress?.name || 'KarVeGo'}</div>
@@ -460,7 +468,7 @@ const BarkodModal: React.FC<BarkodModalProps> = ({
                             order: ${barkodTasarim.config.logoPosition === 'right' ? '2' : '1'};
                           ">
                             ${barkodTasarim.config.logoUrl ? 
-                              `<img src="${barkodTasarim.config.logoUrl}" alt="Logo" style="max-height: 50px; display: inline-block;">` : 
+                              `<img src="${barkodTasarim.config.logoUrl}" alt="Logo" style="width: ${barkodTasarim.config.logoWidth}px; height: ${barkodTasarim.config.logoHeight}px; object-fit: contain; display: inline-block;">` : 
                               `<strong>${selectedSenderAddress?.name || 'KarVeGo'}</strong>`}
                           </div>` : ''}
                         

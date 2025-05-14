@@ -29,6 +29,7 @@ import UsersList from "./pages/admin/UsersList";
 import BalanceRequests from "./pages/admin/BalanceRequests";
 import CarrierPriceManager from "./pages/admin/CarrierPriceManager";
 import BarkodAyarlari from './pages/admin/BarkodAyarlari';
+import BarkodTasarimi from './pages/ayarlar/BarkodTasarimi';
 
 function AuthWrapper() {
   return <AuthPages />;
@@ -129,6 +130,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Agreement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ayarlar/barkod-tasarimi"
+            element={
+              <ProtectedRoute>
+                <BarkodTasarimi />
               </ProtectedRoute>
             }
           />
