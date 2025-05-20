@@ -1,6 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import { Order, SenderAddress } from './types';
-import { sendToSuratKargoV2 } from '../../lib/surat-kargo-v2';
+import { sendToSuratKargoV2, cancelSuratKargoLabelV2 } from '../../lib/surat-kargo-v2';
 import { calculateRoundedDesi } from './utils';
 
 // Kargo fiyatı hesaplayan fonksiyon
@@ -215,5 +215,22 @@ export const sendToNewSuratCargoApi = async (order: Order, senderAddress: Sender
   } catch (error: unknown) {
     console.error('Sürat Kargo Yeni API Error:', error);
     throw error;
+  }
+};
+
+// Sürat Kargo API'si için etiket iptal fonksiyonu
+export const cancelSuratCargoLabel = async (trackingNumber: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const result = await cancelSuratKargoLabelV2(trackingNumber);
+    return {
+      success: true,
+      message: 'Etiket başarıyla iptal edildi'
+    };
+  } catch (error) {
+    console.error('Sürat Kargo etiket iptal hatası:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Etiket iptal edilirken bir hata oluştu'
+    };
   }
 }; 
