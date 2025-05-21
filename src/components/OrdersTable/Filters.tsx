@@ -66,7 +66,7 @@ const Filters: React.FC<FiltersProps> = ({
         <div className="relative flex-1 w-full">
           <input
             type="text"
-            placeholder="Ara: pantolon x5 tişört x3..."
+            placeholder="Ara: Ürün Adı veya Müşteri Adı"
             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lightGreen"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
