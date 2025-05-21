@@ -161,6 +161,14 @@ const BarkodModal: React.FC<BarkodModalProps> = ({
         </div>
         
         <div className="overflow-auto" style={{ maxHeight: '600px' }}>
+          {/* İptal uyarısı */}
+          {selectedOrder.status === 'CANCELED' && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+              <strong className="font-bold">Dikkat! </strong>
+              <span className="block sm:inline">Bu etiket iptal edilmiştir. Geçersizdir.</span>
+            </div>
+          )}
+          
           {/* Barkod önizleme alanı - satıcının tasarımına göre barkod oluşturulur */}
           <div ref={barkodContainerRef} className="barkod-container" style={{ 
             width: `${barkodTasarim.config.width}px`,
@@ -460,6 +468,11 @@ const BarkodModal: React.FC<BarkodModalProps> = ({
                   </head>
                   <body>
                     <div class="container">
+                      ${selectedOrder.status === 'CANCELED' ? `
+                        <div style="background-color: #fee2e2; border: 1px solid #f87171; color: #b91c1c; padding: 12px; border-radius: 4px; margin-bottom: 20px;">
+                          <strong>Dikkat!</strong> Bu etiket iptal edilmiştir. Geçersizdir.
+                        </div>
+                      ` : ''}
                       <div class="header">
                         ${barkodTasarim.config.showLogo && barkodTasarim.config.logoPosition !== 'none' ? 
                           `<div style="
