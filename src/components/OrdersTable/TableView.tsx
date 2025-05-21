@@ -184,13 +184,15 @@ const TableView: React.FC<TableViewProps> = ({
                             <Tag className="w-4 h-4 mr-2 text-darkGreen" />
                             Etiket
                           </button>
-                          <button
+
+                          {/* JSON butonu yorum satırına alındı */}
+                          {/* <button
                             onClick={() => showOrderJson(order)}
                             className="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                           >
                             <Code className="w-4 h-4 mr-2 text-gray-500" />
                             JSON
-                          </button>
+                          </button> */}
                           {/* İptal butonu sadece yazdırıldı durumundaki siparişler için göster */}
                           {order.status === 'PRINTED' && (
                             <button

@@ -135,4 +135,51 @@ export async function sendToSuratKargoV2(gonderi: SuratKargoGonderi): Promise<Su
     }
     throw error;
   }
-} 
+}
+
+// Sürat Kargo etiket iptali için backend fonksiyonu
+export const cancelSuratKargoLabelV2 = async (trackingNumber: string) => {
+  try {
+    console.log('Etiket iptal isteği gönderiliyor:', { trackingNumber });
+    
+    const response = await fetch(`${API_BASE_URL}/surat-kargo/cancel-label`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ trackingNumber })
+    });
+
+    const responseText = await response.text();
+    console.log('Backend yanıtı:', { status: response.status, text: responseText });
+
+    if (!response.ok) {
+      let errorMessage;
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.message || 'Etiket iptal edilirken bir hata oluştu';
+      } catch (e) {
+        errorMessage = `Backend hatası (${response.status}): ${responseText}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      throw new Error(`Geçersiz JSON yanıtı: ${responseText}`);
+    }
+
+    console.log('Etiket iptal başarılı:', data);
+    return data;
+  } catch (error) {
+    console.error('Sürat Kargo etiket iptal hatası:', error);
+    if (error instanceof Error) {
+      toast.error('Etiket iptal edilirken bir hata oluştu: ' + error.message);
+    } else {
+      toast.error('Etiket iptal edilirken bilinmeyen bir hata oluştu');
+    }
+    throw error;
+  }
+}; 
