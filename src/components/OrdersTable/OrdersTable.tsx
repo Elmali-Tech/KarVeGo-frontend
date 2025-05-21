@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { Order, SenderAddress, ProductFilter } from './types';
 import { calculateDesi } from './utils';
 import { filterOrders } from './FilterUtils';
-import { calculateShippingPrice, fetchLabelData, sendToNewSuratCargoApi } from './ShippingLabelService';
+import { calculateShippingPrice, fetchLabelData, sendToNewSuratCargoApi, cancelSuratCargoLabel } from './ShippingLabelService';
 import Filters from './Filters';
 import TableView from './TableView';
 import OrderDetail from './OrderDetail';
@@ -907,6 +907,15 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
       if (result.isConfirmed) {
         // Transaction başlat
         setIsLoading(true);
+
+        // Önce Sürat Kargo API'sine iptal isteği gönder
+        if (orderData.tracking_number) {
+          const apiResult = await cancelSuratCargoLabel(orderData.tracking_number);
+          console.log('Sipariş İptal Edili:', apiResult);
+          if (!apiResult.success) {
+            throw new Error(apiResult.message || 'Sürat Kargo API\'sinde iptal işlemi başarısız oldu');
+          }
+        }
 
         // Kullanıcı bilgisini al
         const { data: { user } } = await supabase.auth.getUser();
