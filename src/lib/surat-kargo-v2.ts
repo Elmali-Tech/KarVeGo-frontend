@@ -158,7 +158,7 @@ export const cancelSuratKargoLabelV2 = async (trackingNumber: string) => {
       try {
         const errorData = JSON.parse(responseText);
         errorMessage = errorData.message || 'Etiket iptal edilirken bir hata oluştu';
-      } catch (e) {
+      } catch {
         errorMessage = `Backend hatası (${response.status}): ${responseText}`;
       }
       throw new Error(errorMessage);
@@ -167,7 +167,7 @@ export const cancelSuratKargoLabelV2 = async (trackingNumber: string) => {
     let data;
     try {
       data = JSON.parse(responseText);
-    } catch (e) {
+    } catch {
       throw new Error(`Geçersiz JSON yanıtı: ${responseText}`);
     }
 

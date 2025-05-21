@@ -7,6 +7,7 @@ import { Order, SenderAddress, ProductFilter } from './types';
 import { calculateDesi } from './utils';
 import { filterOrders } from './FilterUtils';
 import { calculateShippingPrice, fetchLabelData, sendToNewSuratCargoApi, cancelSuratCargoLabel } from './ShippingLabelService';
+import { createBulkLabels } from './BulkLabelService';
 import Filters from './Filters';
 import TableView from './TableView';
 import OrderDetail from './OrderDetail';
@@ -15,6 +16,7 @@ import OrderJsonModal from './OrderJsonModal';
 import LabelModal from './LabelModal';
 import BarkodModal, { LabelData } from './BarkodModal';
 import type { BarkodTasarim } from './BarkodModal';
+import { cancelBulkOrders } from './BulkCancelService';
 
 interface OrdersTableProps {
   orders: Order[];
@@ -415,9 +417,58 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
     if (!editingOrder) return;
 
     try {
-      const { error } = await supabase
+      // Önce siparişin mevcut durumunu veritabanından kontrol et
+      const { data: currentOrder, error: fetchError } = await supabase
         .from('orders')
-        .update({
+        .select('status, tracking_number')
+        .eq('id', editingOrder.id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Eğer sipariş PRINTED durumunda ise ve uygun olmayan duruma değiştirilmek isteniyorsa
+      if (currentOrder.status === 'PRINTED' && 
+          editingOrder.status !== 'PRINTED' && 
+          editingOrder.status !== 'SHIPPED' && 
+          editingOrder.status !== 'COMPLETED') {
+        toast.error('Yazdırıldı durumundaki siparişler sadece Kargoda veya Tamamlandı durumuna geçirilebilir.');
+        return;
+      }
+      
+      // Tamamlanmış siparişlerin durumu değiştirilemez
+      if (currentOrder.status === 'COMPLETED' && currentOrder.status !== editingOrder.status) {
+        toast.error('Tamamlanmış siparişlerin durumu değiştirilemez.');
+        return;
+      }
+
+      // Yazdırıldı durumundaki siparişlerin paket boyutları ve takip numarası değiştirilemez
+      let updateData = {};
+      
+      if (currentOrder.status === 'PRINTED') {
+        // Yazdırıldı siparişler için sınırlı alanları güncelle, ancak durumu değiştirebilir
+        updateData = {
+          status: editingOrder.status, // Durumu güncellenebilir (Kargoda veya Tamamlandı)
+          customer: editingOrder.customer,
+          products: editingOrder.products,
+          shipping_address: editingOrder.shipping_address,
+          billing_address: editingOrder.billing_address,
+          note: editingOrder.note,
+          tags: editingOrder.tags,
+        };
+      } else if (currentOrder.status === 'COMPLETED') {
+        // Tamamlandı durumundaki siparişler için sadece bazı alanların güncellenmesine izin ver
+        // Status değişmeyecek, çünkü zaten yukarıdaki if kontrolü ile engelleniyor
+        updateData = {
+          customer: editingOrder.customer,
+          products: editingOrder.products,
+          shipping_address: editingOrder.shipping_address,
+          billing_address: editingOrder.billing_address,
+          note: editingOrder.note,
+          tags: editingOrder.tags,
+        };
+      } else {
+        // Normal siparişler için tüm alanların güncellenmesine izin ver
+        updateData = {
           status: editingOrder.status,
           package_height: editingOrder.package_height,
           package_width: editingOrder.package_width,
@@ -437,7 +488,12 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
           tags: editingOrder.tags,
           source_name: editingOrder.source_name,
           financial_status: editingOrder.financial_status,
-        })
+        };
+      }
+
+      const { error } = await supabase
+        .from('orders')
+        .update(updateData)
         .eq('id', editingOrder.id);
 
       if (error) throw error;
@@ -625,113 +681,42 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
       return;
     }
     
+    // Maksimum 10 sipariş seçilebilir
+    if (selectedOrders.length > 10) {
+      toast.error('En fazla 10 sipariş için toplu etiket oluşturabilirsiniz');
+      return;
+    }
+    
     try {
-      const result = await Swal.fire({
-        title: 'Toplu Etiket Oluştur',
-        text: `${selectedOrders.length} sipariş için etiket oluşturmak istediğinize emin misiniz?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Evet, Oluştur',
-        cancelButtonText: 'İptal'
-      });
+      setIsLoading(true);
       
-      if (result.isConfirmed) {
-        let successCount = 0;
-        let errorCount = 0;
-        
-        toast.info(`${selectedOrders.length} adet etiket oluşturuluyor...`);
-        
-        for (const orderId of selectedOrders) {
-          try {
-            const { error: updateError } = await supabase
-              .from('orders')
-              .update({
-                status: 'PRINTED',
-                tracking_number: `3636${Math.floor(Math.random() * 1000000)}`
-              })
-              .eq('id', orderId);
-              
-            if (updateError) throw updateError;
-            
-            successCount++;
-          } catch (err) {
-            console.error(`Order ${orderId} için etiket oluşturma hatası:`, err);
-            errorCount++;
-          }
-        }
-        
-        if (successCount > 0) {
-          toast.success(`${successCount} sipariş için etiket başarıyla oluşturuldu`);
-          onOrderUpdate();
-        }
-        
-        if (errorCount > 0) {
-          toast.error(`${errorCount} sipariş için etiket oluşturulamadı`);
-        }
-        
-        setSelectedOrders([]);
-      }
+      // Yeni servis fonksiyonu kullanılıyor
+      await createBulkLabels(selectedOrders, onOrderUpdate);
+      
+      // İşlem başarılı olduğunda seçili siparişleri temizle
+      setSelectedOrders([]);
     } catch (err) {
       console.error('Toplu etiket oluşturma hatası:', err);
-      toast.error('Toplu etiket oluşturulurken bir hata oluştu');
+      
+      // Hata mesajı zaten servis içinde gösterildiği için burada sadece konsola loglama yapılıyor
+      if (!(err instanceof Error && (
+        err.message === 'Sipariş seçilmedi' || 
+        err.message === 'Maksimum sipariş sayısı aşıldı' ||
+        err.message === 'Etiketlenmemiş sipariş yok' ||
+        err.message === 'Gönderici adresi bulunamadı' ||
+        err.message === 'Yetersiz bakiye' ||
+        err.message === 'İşlem iptal edildi'
+      ))) {
+        toast.error('Toplu etiket oluşturulurken bir hata oluştu');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
   
-  // Toplu sipariş durum güncellemesi
-  const handleBulkUpdateStatus = async (newStatus: Order['status']) => {
-    if (selectedOrders.length === 0) return;
+  
 
-    try {
-      const result = await Swal.fire({
-        title: `Durum Güncelleme`,
-        text: `${selectedOrders.length} siparişi "${getStatusText(newStatus)}" durumuna güncellemek istediğinize emin misiniz?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#10B981',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Evet, Güncelle',
-        cancelButtonText: 'İptal',
-      });
-
-      if (result.isConfirmed) {
-        const { error } = await supabase
-          .from('orders')
-          .update({ status: newStatus })
-          .in('id', selectedOrders);
-
-        if (error) throw error;
-
-        await Swal.fire({
-          title: 'Başarılı!',
-          text: `${selectedOrders.length} sipariş durumu güncellendi`,
-          icon: 'success',
-          confirmButtonColor: '#10B981',
-        });
-
-        onOrderUpdate();
-      }
-    } catch (err) {
-      console.error('Siparişler güncellenirken hata oluştu:', err);
-      toast.error('Sipariş durumları güncellenirken bir hata oluştu');
-    }
-  };
-
-  // Helper function to get status text
-  const getStatusText = (status: Order['status'] | 'ALL'): string => {
-    switch (status) {
-      case 'NEW': return 'Yeni';
-      case 'READY': return 'Hazırlandı';
-      case 'PRINTED': return 'Yazdırıldı';
-      case 'SHIPPED': return 'Kargoda';
-      case 'PROBLEMATIC': return 'Sorunlu';
-      case 'COMPLETED': return 'Tamamlandı';
-      case 'CANCELED': return 'İptal Edildi';
-      case 'ALL': return 'Tümü';
-      default: return status;
-    }
-  };
+    // Status text converter function - kept for use in filters and display  const getStatusText = (status: Order['status'] | 'ALL'): string => {    switch (status) {      case 'NEW': return 'Yeni';      case 'READY': return 'Hazırlandı';      case 'PRINTED': return 'Yazdırıldı';      case 'SHIPPED': return 'Kargoda';      case 'PROBLEMATIC': return 'Sorunlu';      case 'COMPLETED': return 'Tamamlandı';      case 'CANCELED': return 'İptal Edildi';      case 'ALL': return 'Tümü';      default: return status;    }  };
 
   const handleShowDetail = (order: Order) => {
     // Siparişin müşteri, adres ve ürün bilgilerini alıp, ürün fiyat bilgilerini kontrol et ve detay modalına gönder
@@ -1020,163 +1005,25 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
     
     try {
       setIsLoading(true);
-      // Önce siparişlerin durumlarını kontrol et
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select('id, status, tracking_number')
-        .in('id', validOrderIds);
       
-      if (ordersError) throw ordersError;
+      // Yeni servis fonksiyonu kullanılıyor
+      await cancelBulkOrders(validOrderIds, onOrderUpdate);
       
-      // Sadece yazdırıldı durumundaki siparişler iptal edilebilir
-      const cancelableOrders = ordersData.filter(order => order.status === 'PRINTED');
-      const nonCancelableOrders = ordersData.filter(order => order.status !== 'PRINTED');
-      
-      if (cancelableOrders.length === 0) {
-        toast.error('Seçilen siparişlerden hiçbiri iptal edilemez. Sadece "Yazdırıldı" durumundaki siparişler iptal edilebilir.');
-        return;
-      }
-      
-      // İptal edilebilir siparişlerin ID'lerini al
-      const cancelableOrderIds = cancelableOrders.map(order => order.id);
-      
-      // İptal edilebilir siparişlerin etiket fiyatlarını al
-      const { data: labelData, error: labelError } = await supabase
-        .from('shipping_labels')
-        .select('order_id, shipping_price, tracking_number')
-        .in('order_id', cancelableOrderIds);
-        
-      if (labelError) {
-        console.error('Etiket bilgileri alınamadı:', labelError);
-        toast.error('Etiket bilgileri alınamadı, bakiye iadesi yapılamayabilir.');
-      }
-      
-      // Toplam iade edilecek tutarı hesapla
-      let totalRefundAmount = 0;
-      if (labelData && labelData.length > 0) {
-        totalRefundAmount = labelData.reduce((total, label) => total + label.shipping_price, 0);
-      }
-      
-      let confirmMessage = '';
-      
-      if (nonCancelableOrders.length > 0) {
-        confirmMessage = `Seçilen ${ordersData.length} siparişten <strong>${cancelableOrders.length}</strong> tanesi iptal edilebilir.<br/><br/>
-                          <strong>${nonCancelableOrders.length}</strong> sipariş "Yazdırıldı" durumunda olmadığı için iptal edilemez.`;
-      } else {
-        confirmMessage = `${cancelableOrders.length} siparişi iptal etmek istediğinize emin misiniz?`;
-      }
-      
-      if (totalRefundAmount > 0) {
-        confirmMessage += `<br/><br/>İptal işlemi sonrasında toplam <strong>${totalRefundAmount} TL</strong> bakiyenize iade edilecektir.`;
-      }
-      
-      const result = await Swal.fire({
-        title: 'Siparişleri İptal Et',
-        html: confirmMessage,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Evet, İptal Et',
-        cancelButtonText: 'Vazgeç',
-      });
-      
-      if (!result.isConfirmed) {
-        return;
-      }
-
-      // Kullanıcı bilgisini al
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('Kullanıcı oturumu bulunamadı');
-      }
-
-      // Eğer iade edilecek tutar varsa bakiyeyi güncelle
-      if (totalRefundAmount > 0) {
-        // Kullanıcının mevcut bakiyesini al
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('balance')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Profil bilgisi alınamadı:', profileError);
-          toast.error('Bakiye güncellenemedi: Profil bilgisi alınamadı');
-        } else {
-          // Bakiyeyi güncelle
-          const { error: balanceError } = await supabase
-            .from('profiles')
-            .update({ 
-              balance: profileData.balance + totalRefundAmount 
-            })
-            .eq('id', user.id);
-
-          if (balanceError) {
-            console.error('Bakiye güncellenirken hata:', balanceError);
-            toast.error('Bakiye iade edilemedi: Güncelleme hatası');
-          } else {
-            // Bakiye güncellemesi için özel bir event fırlat
-            window.dispatchEvent(new CustomEvent('balanceUpdated', {
-              detail: { newBalance: profileData.balance + totalRefundAmount }
-            }));
-            
-            // İptal kayıtlarını shipping_labels tablosuna ekle
-            if (labelData && labelData.length > 0) {
-              try {
-                await supabase
-                  .from('shipping_labels')
-                  .insert(
-                    labelData.map(label => ({
-                      order_id: label.order_id,
-                      tracking_number: label.tracking_number,
-                      kargo_takip_no: label.tracking_number,
-                      carrier: 'Sürat Kargo',
-                      customer_id: null,
-                      subscription_type: null,
-                      created_at: new Date().toISOString(),
-                      shipping_price: -label.shipping_price, // Negatif değer, iade işlemi
-                      is_canceled: true,
-                      canceled_at: new Date().toISOString(),
-                      cancel_note: 'Toplu iptal işlemi'
-                    }))
-                  );
-              } catch (insertError) {
-                console.error('İptal kayıtları eklenirken hata:', insertError);
-                // Bu hata kritik değil, devam et
-              }
-            }
-          }
-        }
-      }
-      
-      // Tüm siparişleri iptal et
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: 'CANCELED' })
-        .in('id', cancelableOrderIds);
-
-      if (error) throw error;
-
-      // Başarıyla iptal edildi
-      let successMessage = `${cancelableOrderIds.length} sipariş başarıyla iptal edildi.`;
-      if (totalRefundAmount > 0) {
-        successMessage += ` ${totalRefundAmount} TL bakiyenize iade edildi.`;
-      }
-      
-      await Swal.fire({
-        title: 'Başarılı!',
-        text: successMessage,
-        icon: 'success',
-        confirmButtonColor: '#10B981',
-      });
-
+      // İşlem başarılı olduğunda seçili siparişleri temizle
       setSelectedOrders([]);
-      onOrderUpdate();
     } catch (err) {
-      console.error('Error canceling orders:', err);
-      toast.error('Siparişler iptal edilirken bir hata oluştu');
+      console.error('Toplu iptal işlemi hatası:', err);
+      
+      // Hata mesajı zaten servis içinde gösterildiği için burada sadece konsola loglama yapılıyor
+      if (!(err instanceof Error && (
+        err.message === 'Sipariş seçilmedi' || 
+        err.message === 'Maksimum sipariş sayısı aşıldı' ||
+        err.message === 'İptal edilebilir sipariş yok' ||
+        err.message === 'Profil bilgisi alınamadı' ||
+        err.message === 'İşlem iptal edildi'
+      ))) {
+        toast.error('Siparişler iptal edilirken bir hata oluştu');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1233,83 +1080,10 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
             </button>
           </div>
 
-          <div className="hidden md:flex gap-2 mt-4 md:mt-0">
-            {selectedOrders.length > 0 && (
-              <>
-                <button
-                  onClick={() => handleBulkCreateLabels()}
-                  disabled={isLoading}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-darkGreen hover:bg-lightGreen focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lightGreen disabled:opacity-50"
-                >
-                  Toplu Etiket Oluştur
-                </button>
-                <button
-                  onClick={() => handleBulkUpdateStatus('NEW')}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Beklemede Yap
-                </button>
-                <button
-                  onClick={() => handleBulkUpdateStatus('SHIPPED')}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Kargoya Ver
-                </button>
-                <button
-                  onClick={handleBulkCancelOrders}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-                >
-                  İptal Et
-                </button>
-                <button
-                  onClick={handleDeleteSelected}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Sil
-                </button>
-              </>
-            )}
-          </div>
+                    <div className="hidden md:flex gap-2 mt-4 md:mt-0">            {selectedOrders.length > 0 && (              <>                <button                  onClick={() => handleBulkCreateLabels()}                  disabled={isLoading}                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-darkGreen hover:bg-lightGreen focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lightGreen disabled:opacity-50"                >                  Toplu Etiket Oluştur                </button>                <button                  onClick={handleBulkCancelOrders}                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"                >                  İptal Et                </button>                <button                  onClick={handleDeleteSelected}                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"                >                  <Trash2 className="h-4 w-4 mr-1" />                  Sil                </button>              </>            )}          </div>
         </div>
 
-        {/* Mobile actions panel when items selected */}
-        {selectedOrders.length > 0 && (
-          <div className="md:hidden flex gap-2 mt-4 overflow-x-auto pb-2">
-            <button
-              onClick={() => handleBulkCreateLabels()}
-              disabled={isLoading}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-darkGreen hover:bg-lightGreen focus:outline-none disabled:opacity-50 whitespace-nowrap"
-            >
-              Toplu Etiket
-            </button>
-            <button
-              onClick={() => handleBulkUpdateStatus('NEW')}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none whitespace-nowrap"
-            >
-              Beklemede
-            </button>
-            <button
-              onClick={() => handleBulkUpdateStatus('SHIPPED')}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none whitespace-nowrap"
-            >
-              Kargoya Ver
-            </button>
-            <button
-              onClick={handleBulkCancelOrders}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none whitespace-nowrap"
-            >
-              İptal
-            </button>
-            <button
-              onClick={handleDeleteSelected}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none whitespace-nowrap"
-            >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Sil
-            </button>
-          </div>
-        )}
+                {/* Mobile actions panel when items selected */}        {selectedOrders.length > 0 && (          <div className="md:hidden flex gap-2 mt-4 overflow-x-auto pb-2">            <button              onClick={() => handleBulkCreateLabels()}              disabled={isLoading}              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-darkGreen hover:bg-lightGreen focus:outline-none disabled:opacity-50 whitespace-nowrap"            >              Toplu Etiket            </button>            <button              onClick={handleBulkCancelOrders}              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none whitespace-nowrap"            >              İptal            </button>            <button              onClick={handleDeleteSelected}              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none whitespace-nowrap"            >              <Trash2 className="h-4 w-4 mr-1" />              Sil            </button>          </div>        )}
 
         {/* Conditional rendering for filters on mobile */}
         <div className={`mt-4 ${showMobileFilters ? 'block' : 'hidden md:block'}`}>
