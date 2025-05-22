@@ -29,6 +29,8 @@ import UsersList from "./pages/admin/UsersList";
 import BalanceRequests from "./pages/admin/BalanceRequests";
 import CarrierPriceManager from "./pages/admin/CarrierPriceManager";
 import BarkodTasarimi from './pages/ayarlar/BarkodTasarimi';
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import FAQ from "./pages/FAQ";
 
 function AuthWrapper() {
   return <AuthPages />;
@@ -68,6 +70,8 @@ function App() {
           <Route path="/auth" element={<AuthWrapper />} />
           <Route path="/siparisler" element={<Orders />} />
           <Route path="/kargo-fiyatlari" element={<CarrierPrices />} />
+          <Route path="/gizlilik-sozlesmesi" element={<PrivacyPolicy />} />
+          <Route path="/sikca-sorulan-sorular" element={<FAQ />} />
           <Route
             path="/urunler"
             element={

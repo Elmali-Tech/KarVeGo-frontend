@@ -75,6 +75,24 @@ const OrderEdit: React.FC<OrderEditProps> = ({
                   Etiket oluşturulmuş siparişlerin durumu sadece Kargoda veya Tamamlandı olarak değiştirilebilir.
                 </p>
               </>
+            ) : editingOrder.status === 'READY' ? (
+              <>
+                <select
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-darkGreen focus:ring-darkGreen sm:text-sm"
+                  value={editingOrder.status}
+                  onChange={(e) => setEditingOrder({
+                    ...editingOrder,
+                    status: e.target.value as Order['status']
+                  })}
+                >
+                  <option value="READY">Hazırlandı</option>
+                  <option value="SHIPPED">Kargoda</option>
+                  <option value="COMPLETED">Tamamlandı</option>
+                </select>
+                <p className="mt-1 text-xs text-orange-600">
+                  Hazırlanan siparişlerin durumu sadece Kargoda veya Tamamlandı olarak değiştirilebilir.
+                </p>
+              </>
             ) : editingOrder.status === 'COMPLETED' ? (
               <>
                 <select
@@ -113,7 +131,7 @@ const OrderEdit: React.FC<OrderEditProps> = ({
             <input
               type="text"
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm ${
-                editingOrder.status === 'PRINTED' 
+                editingOrder.status === 'PRINTED' || editingOrder.status === 'READY'
                   ? 'bg-gray-100 cursor-not-allowed text-gray-700' 
                   : 'focus:border-darkGreen focus:ring-darkGreen'
               } sm:text-sm`}
@@ -122,9 +140,9 @@ const OrderEdit: React.FC<OrderEditProps> = ({
                 ...editingOrder,
                 tracking_number: e.target.value
               })}
-              disabled={editingOrder.status === 'PRINTED'}
+              disabled={editingOrder.status === 'PRINTED' || editingOrder.status === 'READY'}
             />
-            {editingOrder.status === 'PRINTED' && (
+            {(editingOrder.status === 'PRINTED' || editingOrder.status === 'READY') && (
               <p className="mt-1 text-xs text-orange-600">
                 Etiket oluşturulmuş siparişlerin takip numarası değiştirilemez.
               </p>
@@ -136,7 +154,7 @@ const OrderEdit: React.FC<OrderEditProps> = ({
             <input
               type="number"
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm ${
-                editingOrder.status === 'PRINTED' 
+                editingOrder.status === 'PRINTED' || editingOrder.status === 'READY'
                   ? 'bg-gray-100 cursor-not-allowed text-gray-700' 
                   : 'focus:border-darkGreen focus:ring-darkGreen'
               } sm:text-sm`}
@@ -145,7 +163,7 @@ const OrderEdit: React.FC<OrderEditProps> = ({
                 ...editingOrder,
                 package_height: parseFloat(e.target.value)
               })}
-              disabled={editingOrder.status === 'PRINTED'}
+              disabled={editingOrder.status === 'PRINTED' || editingOrder.status === 'READY'}
             />
           </div>
           
@@ -154,7 +172,7 @@ const OrderEdit: React.FC<OrderEditProps> = ({
             <input
               type="number"
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm ${
-                editingOrder.status === 'PRINTED' 
+                editingOrder.status === 'PRINTED' || editingOrder.status === 'READY'
                   ? 'bg-gray-100 cursor-not-allowed text-gray-700' 
                   : 'focus:border-darkGreen focus:ring-darkGreen'
               } sm:text-sm`}
@@ -163,7 +181,7 @@ const OrderEdit: React.FC<OrderEditProps> = ({
                 ...editingOrder,
                 package_width: parseFloat(e.target.value)
               })}
-              disabled={editingOrder.status === 'PRINTED'}
+              disabled={editingOrder.status === 'PRINTED' || editingOrder.status === 'READY'}
             />
           </div>
           
@@ -172,7 +190,7 @@ const OrderEdit: React.FC<OrderEditProps> = ({
             <input
               type="number"
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm ${
-                editingOrder.status === 'PRINTED' 
+                editingOrder.status === 'PRINTED' || editingOrder.status === 'READY'
                   ? 'bg-gray-100 cursor-not-allowed text-gray-700' 
                   : 'focus:border-darkGreen focus:ring-darkGreen'
               } sm:text-sm`}
@@ -181,7 +199,7 @@ const OrderEdit: React.FC<OrderEditProps> = ({
                 ...editingOrder,
                 package_length: parseFloat(e.target.value)
               })}
-              disabled={editingOrder.status === 'PRINTED'}
+              disabled={editingOrder.status === 'PRINTED' || editingOrder.status === 'READY'}
             />
           </div>
           
@@ -190,7 +208,7 @@ const OrderEdit: React.FC<OrderEditProps> = ({
             <input
               type="number"
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm ${
-                editingOrder.status === 'PRINTED' 
+                editingOrder.status === 'PRINTED' || editingOrder.status === 'READY'
                   ? 'bg-gray-100 cursor-not-allowed text-gray-700' 
                   : 'focus:border-darkGreen focus:ring-darkGreen'
               } sm:text-sm`}
@@ -199,9 +217,9 @@ const OrderEdit: React.FC<OrderEditProps> = ({
                 ...editingOrder,
                 package_weight: parseFloat(e.target.value)
               })}
-              disabled={editingOrder.status === 'PRINTED'}
+              disabled={editingOrder.status === 'PRINTED' || editingOrder.status === 'READY'}
             />
-            {editingOrder.status === 'PRINTED' && (
+            {(editingOrder.status === 'PRINTED' || editingOrder.status === 'READY') && (
               <p className="mt-1 text-xs text-orange-600">
                 Etiket oluşturulmuş siparişlerin paket bilgileri değiştirilemez.
               </p>

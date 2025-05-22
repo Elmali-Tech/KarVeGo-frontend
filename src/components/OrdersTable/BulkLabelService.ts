@@ -26,12 +26,6 @@ export const createBulkLabels = async (
     throw new Error('Sipariş seçilmedi');
   }
   
-  // Maksimum 10 sipariş seçilebilir
-  if (selectedOrders.length > 10) {
-    toast.error('En fazla 10 sipariş için toplu etiket oluşturabilirsiniz');
-    throw new Error('Maksimum sipariş sayısı aşıldı');
-  }
-  
   // Seçilen siparişlerin bilgilerini al
   const { data: selectedOrdersData, error: ordersError } = await supabase
     .from('orders')
@@ -63,9 +57,42 @@ export const createBulkLabels = async (
   
   const defaultAddress = addressesData[0];
   
+  // Bakiye hesaplama başlangıç bildirimi
+  Swal.fire({
+    title: 'Bakiye Hesaplanıyor',
+    html: `
+      <div class="mt-3">
+        <div class="flex items-center justify-center mb-3">
+          <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          <span class="ml-3 text-blue-600 font-medium" id="calculation-text">Siparişler için toplam tutar hesaplanıyor...</span>
+        </div>
+        <div class="w-full bg-gray-100 rounded-full h-2.5 mb-4 overflow-hidden shadow-inner">
+          <div id="calculation-bar" class="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-300 ease-in-out" style="width: 0%"></div>
+        </div>
+        <div class="text-center bg-blue-50 p-3 rounded-lg border border-blue-100 shadow-sm">
+          <p id="calculation-order" class="text-sm text-gray-600">Lütfen bekleyin...</p>
+        </div>
+      </div>
+    `,
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+  
   // Tüm siparişler için toplam fiyat hesapla
   let totalPrice = 0;
-  for (const order of ordersWithoutLabels) {
+  for (let i = 0; i < ordersWithoutLabels.length; i++) {
+    const order = ordersWithoutLabels[i];
+    
+    // İlerleme göstergesini güncelle
+    const progressPercent = Math.round((i / ordersWithoutLabels.length) * 100);
+    document.getElementById('calculation-bar')!.style.width = `${progressPercent}%`;
+    document.getElementById('calculation-text')!.textContent = `${i+1}/${ordersWithoutLabels.length} sipariş hesaplanıyor...`;
+    document.getElementById('calculation-order')!.textContent = `İşleniyor: ${order.customer?.name || 'İsimsiz Müşteri'}`;
+    
     try {
       const price = await calculateShippingPrice(order, defaultAddress);
       totalPrice += price;
@@ -73,6 +100,9 @@ export const createBulkLabels = async (
       console.error(`Sipariş ${order.id} için fiyat hesaplanamadı:`, err);
     }
   }
+  
+  // Hesaplama tamamlandı, yükleme bildirimini kapat
+  Swal.close();
   
   // Kullanıcının bakiyesini kontrol et
   const { data: { user } } = await supabase.auth.getUser();
@@ -99,10 +129,46 @@ export const createBulkLabels = async (
     title: 'Toplu Etiket Oluştur',
     html: `
       <div class="text-left">
-        <p>${ordersWithoutLabels.length} sipariş için etiket oluşturmak istediğinize emin misiniz?</p>
-        <p class="mt-3 font-semibold">Toplam Tutar: ${totalPrice.toFixed(2)} TL</p>
-        <p class="mt-1 text-sm">Mevcut Bakiye: ${profileData.balance.toFixed(2)} TL</p>
-        <p class="mt-3 text-xs text-gray-500">İşlem tamamlanana kadar lütfen bekleyin. Bu işlem biraz zaman alabilir.</p>
+        <div class="flex items-center mb-4">
+          <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"></path>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-gray-900">Onay Gerekiyor</p>
+            <p class="text-sm text-gray-500">${ordersWithoutLabels.length} sipariş için etiket oluşturmak istediğinize emin misiniz?</p>
+          </div>
+        </div>
+        
+        <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200 shadow-sm">
+          <p class="font-medium text-gray-800 mb-2">Ödeme Özeti</p>
+          <div class="space-y-2">
+            <div class="flex justify-between items-center pb-2 border-b border-blue-100">
+              <span class="text-gray-600">Etiket Sayısı:</span>
+              <span class="font-medium bg-blue-100 px-2 py-0.5 rounded-full text-blue-800">${ordersWithoutLabels.length} adet</span>
+            </div>
+            <div class="flex justify-between items-center pb-2 border-b border-blue-100">
+              <span class="text-gray-600">Toplam Tutar:</span>
+              <span class="font-bold text-blue-600">${totalPrice.toFixed(2)} TL</span>
+            </div>
+            <div class="flex justify-between items-center pb-2 border-b border-blue-100">
+              <span class="text-gray-600">Mevcut Bakiye:</span>
+              <span class="font-medium ${profileData.balance < totalPrice ? 'text-red-600' : 'text-green-600'}">${profileData.balance.toFixed(2)} TL</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">İşlem Sonrası Bakiye:</span>
+              <span class="font-medium">${(profileData.balance - totalPrice).toFixed(2)} TL</span>
+            </div>
+          </div>
+        </div>
+        
+        <p class="mt-4 text-xs text-gray-500 flex items-center">
+          <svg class="h-4 w-4 text-yellow-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3Z"></path>
+          </svg>
+          İşlem tamamlanana kadar lütfen bekleyin. Bu işlem biraz zaman alabilir.
+        </p>
       </div>
     `,
     icon: 'question',
@@ -127,11 +193,16 @@ export const createBulkLabels = async (
     title: 'Etiketler Oluşturuluyor',
     html: `
       <div class="mt-3">
-        <p id="progress-text">0/${ordersWithoutLabels.length} etiket oluşturuldu</p>
-        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-          <div id="progress-bar" class="bg-green-600 h-2.5 rounded-full" style="width: 0%"></div>
+        <div class="flex items-center justify-center mb-3">
+          <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
+          <span class="ml-3 text-green-600 font-medium" id="progress-text">0/${ordersWithoutLabels.length} etiket oluşturuldu</span>
         </div>
-        <p id="current-order" class="mt-2 text-sm">İşlem başlatılıyor...</p>
+        <div class="w-full bg-gray-100 rounded-full h-2.5 mb-4 overflow-hidden shadow-inner">
+          <div id="progress-bar" class="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full transition-all duration-300 ease-in-out" style="width: 0%"></div>
+        </div>
+        <div class="text-center bg-green-50 p-3 rounded-lg border border-green-100 shadow-sm">
+          <p id="current-order" class="text-sm text-gray-600">İşlem başlatılıyor...</p>
+        </div>
       </div>
     `,
     allowOutsideClick: false,
@@ -150,7 +221,7 @@ export const createBulkLabels = async (
     const progressPercent = Math.round((i / ordersWithoutLabels.length) * 100);
     document.getElementById('progress-bar')!.style.width = `${progressPercent}%`;
     document.getElementById('progress-text')!.textContent = `${i}/${ordersWithoutLabels.length} etiket oluşturuldu`;
-    document.getElementById('current-order')!.textContent = `İşleniyor: ${order.id} (${order.customer?.name || 'İsimsiz Müşteri'})`;
+    document.getElementById('current-order')!.textContent = `İşleniyor: ${order.customer?.name || 'İsimsiz Müşteri'}`;
     
     try {
       // Sipariş için fiyat hesapla
@@ -171,7 +242,7 @@ export const createBulkLabels = async (
         .from('orders')
         .update({
           tracking_number: trackingNumber,
-          status: 'PRINTED',
+          status: 'READY',
           shipping_tracking_code: trackingNumber
         })
         .eq('id', order.id);
@@ -212,7 +283,7 @@ export const createBulkLabels = async (
     
     // Her istek arasında 2-3 saniye bekle (son istek hariç)
     if (i < ordersWithoutLabels.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
   }
   
@@ -225,9 +296,49 @@ export const createBulkLabels = async (
       title: 'İşlem Tamamlandı',
       html: `
         <div class="text-left">
-          <p>${successCount} sipariş için etiket başarıyla oluşturuldu${errorCount > 0 ? `, ${errorCount} sipariş için etiket oluşturulamadı` : ''}.</p>
-          <p class="mt-3 font-semibold">Toplam Harcanan: ${(profileData.balance - remainingBalance).toFixed(2)} TL</p>
-          <p class="mt-1 text-sm">Kalan Bakiye: ${remainingBalance.toFixed(2)} TL</p>
+          <div class="flex items-center mb-3">
+            <div class="flex-shrink-0 h-12 w-12 rounded-full bg-green-100 flex items-center justify-center shadow-sm">
+              <svg class="h-7 w-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-base font-medium text-gray-900">Başarıyla Tamamlandı</p>
+              <p class="text-sm text-gray-600">${successCount} sipariş için etiket oluşturuldu</p>
+            </div>
+          </div>
+          
+          ${errorCount > 0 ? `
+          <div class="flex items-center mb-4">
+            <div class="flex-shrink-0 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center shadow-sm">
+              <svg class="h-7 w-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-base font-medium text-gray-900">Bazı İşlemler Başarısız</p>
+              <p class="text-sm text-gray-600">${errorCount} sipariş için etiket oluşturulamadı</p>
+            </div>
+          </div>
+          ` : ''}
+          
+          <div class="mt-5 p-4 bg-green-50 rounded-lg border border-green-200 shadow-sm">
+            <p class="font-medium text-gray-800 mb-3 pb-2 border-b border-green-100">Bakiye Özeti</p>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Toplam Harcanan:</span>
+                <span class="font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">${(profileData.balance - remainingBalance).toFixed(2)} TL</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Önceki Bakiye:</span>
+                <span class="font-medium">${profileData.balance.toFixed(2)} TL</span>
+              </div>
+              <div class="flex justify-between items-center pt-2 border-t border-green-100">
+                <span class="text-gray-700 font-medium">Yeni Bakiye:</span>
+                <span class="font-medium text-green-600 bg-green-100 px-3 py-1 rounded-lg">${remainingBalance.toFixed(2)} TL</span>
+              </div>
+            </div>
+          </div>
         </div>
       `,
       icon: successCount === ordersWithoutLabels.length ? 'success' : 'warning',

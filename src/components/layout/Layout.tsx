@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
+import Footer from '../Footer';
 import { CheckCircle, Upload, X } from 'lucide-react';
 
 interface LayoutProps {
@@ -210,7 +211,7 @@ export default function Layout({ children }: LayoutProps) {
   }, [isSidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header Component */}
       <Header 
         isSidebarOpen={isSidebarOpen} 
@@ -252,7 +253,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
         <div className="flex gap-8 relative">
           {/* Desktop Sidebar */}
           <div className="hidden lg:block">
@@ -268,6 +269,8 @@ export default function Layout({ children }: LayoutProps) {
           </main>
         </div>
       </div>
+
+      <Footer />
 
       {/* Bakiye Ekleme Modal */}
       {isBalanceModalOpen && (

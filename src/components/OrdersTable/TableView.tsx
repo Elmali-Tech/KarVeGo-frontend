@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, Trash2, Code, Edit, Tag, Eye, MoreHorizontal, Filter, X, Ban } from 'lucide-react';
+import { Package, Trash2, Edit, Tag, Eye, MoreHorizontal, Filter, X, Ban } from 'lucide-react';
 import { Order } from './types';
 import { getStatusBadgeClass, getStatusText } from './utils';
 
@@ -26,7 +26,6 @@ const TableView: React.FC<TableViewProps> = ({
   handleShowDetail,
   handleEditOrder,
   handleBuyLabel,
-  showOrderJson,
   handleDeleteOrder,
   handleCancelOrder
 }) => {
@@ -184,17 +183,8 @@ const TableView: React.FC<TableViewProps> = ({
                             <Tag className="w-4 h-4 mr-2 text-darkGreen" />
                             Etiket
                           </button>
-
-                          {/* JSON butonu yorum satırına alındı */}
-                          {/* <button
-                            onClick={() => showOrderJson(order)}
-                            className="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                          >
-                            <Code className="w-4 h-4 mr-2 text-gray-500" />
-                            JSON
-                          </button> */}
                           {/* İptal butonu sadece yazdırıldı durumundaki siparişler için göster */}
-                          {order.status === 'PRINTED' && (
+                          {(order.status === 'PRINTED' || order.status === 'READY') && (
                             <button
                               onClick={() => handleCancelOrder(order.id)}
                               className="flex items-center w-full px-4 py-2 text-sm text-left text-orange-600 hover:bg-orange-50"
@@ -204,7 +194,7 @@ const TableView: React.FC<TableViewProps> = ({
                             </button>
                           )}
                           {/* Sil butonu sadece yazdırıldı, kargoda ve sorunlu durumunda olmayanlar için göster */}
-                          {!['PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status) && (
+                          {!['READY', 'PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status) && (
                             <button
                               onClick={() => handleDeleteOrder(order.id)}
                               className="flex items-center w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
@@ -276,15 +266,8 @@ const TableView: React.FC<TableViewProps> = ({
                           <Tag className="w-3 h-3 mr-2" />
                           Etiket
                         </button>
-                        <button
-                          onClick={() => showOrderJson(order)}
-                          className="flex items-center w-full px-3 py-2 text-xs text-left text-gray-700 hover:bg-gray-100"
-                        >
-                          <Code className="w-3 h-3 mr-2" />
-                          JSON
-                        </button>
                         {/* İptal butonu sadece yazdırıldı durumundaki siparişler için göster */}
-                        {order.status === 'PRINTED' && (
+                        {(order.status === 'PRINTED' || order.status === 'READY') && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -297,7 +280,7 @@ const TableView: React.FC<TableViewProps> = ({
                           </button>
                         )}
                         {/* Sil butonu sadece yazdırıldı, kargoda ve sorunlu durumunda olmayanlar için göster */}
-                        {!['PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status) && (
+                        {!['READY', 'PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status) && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

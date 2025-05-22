@@ -26,11 +26,7 @@ export const cancelBulkOrders = async (
     throw new Error('Sipariş seçilmedi');
   }
   
-  // Maksimum 10 sipariş seçilebilir
-  if (selectedOrders.length > 10) {
-    toast.error('En fazla 10 sipariş için toplu iptal işlemi yapabilirsiniz');
-    throw new Error('Maksimum sipariş sayısı aşıldı');
-  }
+
   
   // Önce siparişlerin durumlarını kontrol et
   const { data: ordersData, error: ordersError } = await supabase
@@ -41,11 +37,11 @@ export const cancelBulkOrders = async (
   if (ordersError) throw ordersError;
   
   // Sadece yazdırıldı durumundaki siparişler iptal edilebilir
-  const cancelableOrders = ordersData.filter(order => order.status === 'PRINTED' && order.tracking_number);
-  const nonCancelableOrders = ordersData.filter(order => order.status !== 'PRINTED' || !order.tracking_number);
+  const cancelableOrders = ordersData.filter(order => (order.status === 'PRINTED' || order.status === 'READY') && order.tracking_number);
+  const nonCancelableOrders = ordersData.filter(order => (order.status !== 'PRINTED' && order.status !== 'READY') || !order.tracking_number);
   
   if (cancelableOrders.length === 0) {
-    toast.error('Seçilen siparişlerden hiçbiri iptal edilemez. Sadece "Yazdırıldı" durumundaki siparişler iptal edilebilir.');
+    toast.error('Seçilen siparişlerden hiçbiri iptal edilemez. Sadece "Hazırlandı" veya "Yazdırıldı" durumundaki siparişler iptal edilebilir.');
     throw new Error('İptal edilebilir sipariş yok');
   }
   
@@ -69,22 +65,64 @@ export const cancelBulkOrders = async (
     totalRefundAmount = labelData.reduce((total, label) => total + label.shipping_price, 0);
   }
   
-  let confirmMessage = '';
-  
-  if (nonCancelableOrders.length > 0) {
-    confirmMessage = `Seçilen ${ordersData.length} siparişten <strong>${cancelableOrders.length}</strong> tanesi iptal edilebilir.<br/><br/>
-                    <strong>${nonCancelableOrders.length}</strong> sipariş "Yazdırıldı" durumunda olmadığı için iptal edilemez.`;
-  } else {
-    confirmMessage = `${cancelableOrders.length} siparişi iptal etmek istediğinize emin misiniz?`;
-  }
-  
-  if (totalRefundAmount > 0) {
-    confirmMessage += `<br/><br/>İptal işlemi sonrasında toplam <strong>${totalRefundAmount} TL</strong> bakiyenize iade edilecektir.`;
-  }
-  
+  // Onay mesajı göster
   const result = await Swal.fire({
     title: 'Siparişleri İptal Et',
-    html: confirmMessage,
+    html: `
+      <div class="text-left">
+        <div class="flex items-center mb-4">
+          <div class="flex-shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3Z"></path>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-gray-900">Onay Gerekiyor</p>
+            <p class="text-sm text-gray-500">${
+              nonCancelableOrders.length > 0 
+                ? `Seçilen ${ordersData.length} siparişten <strong>${cancelableOrders.length}</strong> tanesi iptal edilebilir.` 
+                : `${cancelableOrders.length} siparişi iptal etmek istediğinize emin misiniz?`
+            }</p>
+          </div>
+        </div>
+        
+        ${nonCancelableOrders.length > 0 ? `
+        <div class="mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+          <div class="flex items-start">
+            <svg class="mt-0.5 h-5 w-5 text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3Z"></path>
+            </svg>
+            <span class="text-sm text-yellow-700">
+              <strong>${nonCancelableOrders.length}</strong> sipariş uygun durumda olmadığı için iptal edilemez.
+            </span>
+          </div>
+        </div>
+        ` : ''}
+        
+        ${totalRefundAmount > 0 ? `
+        <div class="mt-4 p-4 bg-red-50 rounded-lg border border-red-200 shadow-sm">
+          <p class="font-medium text-gray-800 mb-2">İade Özeti</p>
+          <div class="space-y-2">
+            <div class="flex justify-between items-center pb-2 border-b border-red-100">
+              <span class="text-gray-600">İptal Edilecek Etiket:</span>
+              <span class="font-medium bg-red-100 px-2 py-0.5 rounded-full text-red-800">${cancelableOrders.length} adet</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">Toplam İade Tutarı:</span>
+              <span class="font-bold text-green-600">${totalRefundAmount.toFixed(2)} TL</span>
+            </div>
+          </div>
+        </div>
+        ` : ''}
+        
+        <p class="mt-4 text-xs text-gray-500 flex items-center">
+          <svg class="h-4 w-4 text-red-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3Z"></path>
+          </svg>
+          İşlem tamamlanana kadar lütfen bekleyin. Bu işlem geri alınamaz.
+        </p>
+      </div>
+    `,
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#dc2626',
@@ -109,11 +147,16 @@ export const cancelBulkOrders = async (
     title: 'Siparişler İptal Ediliyor',
     html: `
       <div class="mt-3">
-        <p id="progress-text">0/${cancelableOrders.length} sipariş iptal edildi</p>
-        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-          <div id="progress-bar" class="bg-red-600 h-2.5 rounded-full" style="width: 0%"></div>
+        <div class="flex items-center justify-center mb-3">
+          <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-500"></div>
+          <span class="ml-3 text-red-600 font-medium" id="progress-text">0/${cancelableOrders.length} sipariş iptal edildi</span>
         </div>
-        <p id="current-order" class="mt-2 text-sm">İşlem başlatılıyor...</p>
+        <div class="w-full bg-gray-100 rounded-full h-2.5 mb-4 overflow-hidden shadow-inner">
+          <div id="progress-bar" class="bg-gradient-to-r from-red-400 to-red-600 h-2.5 rounded-full transition-all duration-300 ease-in-out" style="width: 0%"></div>
+        </div>
+        <div class="text-center bg-red-50 p-3 rounded-lg border border-red-100 shadow-sm">
+          <p id="current-order" class="text-sm text-gray-600">İşlem başlatılıyor...</p>
+        </div>
       </div>
     `,
     allowOutsideClick: false,
@@ -149,7 +192,7 @@ export const cancelBulkOrders = async (
     const progressPercent = Math.round((i / cancelableOrders.length) * 100);
     document.getElementById('progress-bar')!.style.width = `${progressPercent}%`;
     document.getElementById('progress-text')!.textContent = `${i}/${cancelableOrders.length} sipariş iptal edildi`;
-    document.getElementById('current-order')!.textContent = `İşleniyor: ${order.id} (Takip No: ${trackingNumber})`;
+    document.getElementById('current-order')!.textContent = `İşleniyor: ${trackingNumber}`;
     
     try {
       // Sürat Kargo API'sine iptal isteği gönder
@@ -231,9 +274,47 @@ export const cancelBulkOrders = async (
       title: 'İşlem Tamamlandı',
       html: `
         <div class="text-left">
-          <p>${successCount} sipariş başarıyla iptal edildi${errorCount > 0 ? `, ${errorCount} sipariş için iptal işlemi başarısız oldu` : ''}.</p>
-          ${totalRefunded > 0 ? `<p class="mt-3 font-semibold">Toplam İade: ${totalRefunded.toFixed(2)} TL</p>
-          <p class="mt-1 text-sm">Yeni Bakiye: ${(profileData.balance + totalRefunded).toFixed(2)} TL</p>` : ''}
+          <div class="flex items-center mb-3">
+            <div class="flex-shrink-0 h-12 w-12 rounded-full bg-green-100 flex items-center justify-center shadow-sm">
+              <svg class="h-7 w-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-base font-medium text-gray-900">Başarıyla Tamamlandı</p>
+              <p class="text-sm text-gray-600">${successCount} sipariş başarıyla iptal edildi</p>
+            </div>
+          </div>
+          
+          ${errorCount > 0 ? `
+          <div class="flex items-center mb-4">
+            <div class="flex-shrink-0 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center shadow-sm">
+              <svg class="h-7 w-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-base font-medium text-gray-900">Bazı İşlemler Başarısız</p>
+              <p class="text-sm text-gray-600">${errorCount} sipariş için iptal işlemi başarısız oldu</p>
+            </div>
+          </div>
+          ` : ''}
+          
+          ${totalRefunded > 0 ? `
+          <div class="mt-5 p-4 bg-green-50 rounded-lg border border-green-200 shadow-sm">
+            <p class="font-medium text-gray-800 mb-3 pb-2 border-b border-green-100">Bakiye Özeti</p>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Toplam İade Tutarı:</span>
+                <span class="font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg">${totalRefunded.toFixed(2)} TL</span>
+              </div>
+              <div class="flex justify-between items-center pt-2 border-t border-green-100">
+                <span class="text-gray-700 font-medium">Yeni Bakiye:</span>
+                <span class="font-medium text-green-600 bg-green-100 px-3 py-1 rounded-lg">${(profileData.balance + totalRefunded).toFixed(2)} TL</span>
+              </div>
+            </div>
+          </div>
+          ` : ''}
         </div>
       `,
       icon: successCount === cancelableOrders.length ? 'success' : 'warning',

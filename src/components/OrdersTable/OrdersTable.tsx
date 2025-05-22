@@ -259,15 +259,15 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
       if (ordersError) throw ordersError;
       
       const deletableOrders = ordersData.filter(
-        order => !['PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status)
+        order => !['READY', 'PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status)
       );
       
       const nonDeletableOrders = ordersData.filter(
-        order => ['PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status)
+        order => ['READY', 'PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(order.status)
       );
       
       if (deletableOrders.length === 0) {
-        toast.error('Seçilen siparişlerden hiçbiri silinemez. Yazdırıldı, Kargoda veya Sorunlu durumundaki siparişler silinemez.');
+        toast.error('Seçilen siparişlerden hiçbiri silinemez. Hazırlandı, Yazdırıldı, Kargoda veya Sorunlu durumundaki siparişler silinemez.');
         return;
       }
       
@@ -279,7 +279,7 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
         const result = await Swal.fire({
           title: 'Siparişleri Sil',
           html: `Seçilen ${ordersData.length} siparişten <strong>${deletableCount}</strong> tanesi silinebilir.<br/><br/>
-                <strong>${nonDeletableCount}</strong> sipariş durumu "Yazdırıldı", "Kargoda" veya "Sorunlu" olduğu için silinemez.<br/><br/>
+                <strong>${nonDeletableCount}</strong> sipariş durumu "Hazırlandı", "Yazdırıldı", "Kargoda" veya "Sorunlu" olduğu için silinemez.<br/><br/>
                 Sadece silinebilir durumda olan ${deletableCount} siparişi silmek istiyor musunuz?`,
           icon: 'warning',
           showCancelButton: true,
@@ -354,8 +354,8 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
       if (orderError) throw orderError;
       
       // Yazdırıldı, Kargoda veya Sorunlu durumundaki siparişler silinemez
-      if (['PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(orderData.status)) {
-        toast.error('Bu sipariş "Yazdırıldı", "Kargoda" veya "Sorunlu" durumunda olduğu için silinemez.');
+      if (['READY', 'PRINTED', 'SHIPPED', 'PROBLEMATIC'].includes(orderData.status)) {
+        toast.error('Bu sipariş "Hazırlandı", "Yazdırıldı", "Kargoda" veya "Sorunlu" durumunda olduğu için silinemez.');
         return;
       }
 
@@ -435,6 +435,15 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
         return;
       }
       
+      // Eğer sipariş READY durumunda ise ve uygun olmayan duruma değiştirilmek isteniyorsa
+      if (currentOrder.status === 'READY' && 
+          editingOrder.status !== 'READY' && 
+          editingOrder.status !== 'SHIPPED' && 
+          editingOrder.status !== 'COMPLETED') {
+        toast.error('Hazırlandı durumundaki siparişler sadece Kargoda veya Tamamlandı durumuna geçirilebilir.');
+        return;
+      }
+      
       // Tamamlanmış siparişlerin durumu değiştirilemez
       if (currentOrder.status === 'COMPLETED' && currentOrder.status !== editingOrder.status) {
         toast.error('Tamamlanmış siparişlerin durumu değiştirilemez.');
@@ -444,8 +453,8 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
       // Yazdırıldı durumundaki siparişlerin paket boyutları ve takip numarası değiştirilemez
       let updateData = {};
       
-      if (currentOrder.status === 'PRINTED') {
-        // Yazdırıldı siparişler için sınırlı alanları güncelle, ancak durumu değiştirebilir
+      if (currentOrder.status === 'PRINTED' || currentOrder.status === 'READY') {
+        // Yazdırıldı veya Hazırlandı durumundaki siparişler için sınırlı alanları güncelle
         updateData = {
           status: editingOrder.status, // Durumu güncellenebilir (Kargoda veya Tamamlandı)
           customer: editingOrder.customer,
@@ -626,7 +635,7 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
           .from('orders')
           .update({
             tracking_number: trackingNumber,
-            status: 'PRINTED',
+            status: 'READY',
             shipping_tracking_code: trackingNumber
           })
           .eq('id', selectedOrder.id);
@@ -678,12 +687,6 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
   const handleBulkCreateLabels = async () => {
     if (selectedOrders.length === 0) {
       toast.error('Lütfen en az bir sipariş seçin');
-      return;
-    }
-    
-    // Maksimum 10 sipariş seçilebilir
-    if (selectedOrders.length > 10) {
-      toast.error('En fazla 10 sipariş için toplu etiket oluşturabilirsiniz');
       return;
     }
     
@@ -858,8 +861,8 @@ export default function OrdersTable({ orders, loading, onOrderUpdate }: OrdersTa
       if (orderError) throw orderError;
       
       // Sadece yazdırıldı durumundaki siparişler iptal edilebilir
-      if (orderData.status !== 'PRINTED') {
-        toast.error('Sadece "Yazdırıldı" durumundaki siparişler iptal edilebilir.');
+      if (orderData.status !== 'PRINTED' && orderData.status !== 'READY') {
+        toast.error('Sadece "Hazırlandı" veya "Yazdırıldı" durumundaki siparişler iptal edilebilir.');
         return;
       }
 
